@@ -10,7 +10,7 @@ lat = np.linspace(-90, 90, 180)
 lon2d, lat2d = np.meshgrid(lon, lat)
 
 # Parameters
-n_frames = 100
+n_frames = 366
 scale = 0.05  # spatial scale of noise
 time_scale = 0.02  # temporal scale of noise
 seed = 42
@@ -43,7 +43,9 @@ mesh = ax.pcolormesh(
 def update(frame):
     temp = generate_temperature_field(frame)
     mesh.set_array(temp)
-    ax.set_title(f"Frame {frame}")
+    #ax.set_title(f"Frame {frame}")
+    filename=f"data/frame_{frame}.png"
+    plt.savefig(filename, dpi=150, bbox_inches='tight')
     return [mesh]
 
 # Animate
