@@ -1,0 +1,5 @@
+numpy
+matplotlib
+cartopy
+# perlin noise: https://pypi.org/project/noise/
+noise 
