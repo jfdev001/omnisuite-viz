@@ -32,12 +32,17 @@ def generate_temperature_field(t, scale=0.05, time_scale=0.02):
 fig = plt.figure(figsize=(10, 5))
 ax = plt.axes(projection=ccrs.PlateCarree())
 ax.coastlines()
-mesh = ax.pcolormesh(lon, lat, np.zeros_like(lat2d), transform=ccrs.PlateCarree(), cmap='coolwarm')
+temp = generate_temperature_field(0)
+mesh = ax.pcolormesh(
+    lon, lat, 
+    temp,
+    transform=ccrs.PlateCarree(), 
+    cmap='coolwarm')
 
 # Update function for animation
 def update(frame):
     temp = generate_temperature_field(frame)
-    mesh.set_array(temp.ravel())
+    mesh.set_array(temp)
     ax.set_title(f"Frame {frame}")
     return [mesh]
 
