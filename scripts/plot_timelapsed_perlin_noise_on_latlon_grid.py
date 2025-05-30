@@ -22,7 +22,7 @@ def main():
     if not os.path.exists(outdir):
         os.mkdir(outdir)
 
-    save_each_frame: bool = args.save_each_frame
+    save_animation: bool = args.save_animation
     num_frames_in_animation: int = args.num_frames_in_animation
 
     # Globe grid definition
@@ -30,7 +30,7 @@ def main():
     lat = np.linspace(-90, 90, 180)
     lon2d, lat2d = np.meshgrid(lon, lat)
 
-    # Plot of noise on globe grid
+    # Timelapse plot of noise on globe grid
     px = 1/plt.rcParams["figure.dpi"]
     fig = plt.figure(
         figsize=(plot_width_in_pixels * px, plot_height_in_pixels * px))
@@ -44,18 +44,8 @@ def main():
         transform=ccrs.PlateCarree(),
         cmap='coolwarm')
 
-    pbar = tqdm(total=num_frames_in_animation, desc="Plotting frames")
-
-    # TODO: saving the animation takes a long time... could just iter through
-    # nframes...
-    animation = FuncAnimation(
-        fig,
-        update_frame(lat2d, lon2d, mesh, outdir,
-                     fig, pbar, save_each_frame),
-        frames=num_frames_in_animation)
-
-    animation.save(os.path.join(outdir, "anim.gif"))
-    pbar.close()
+    animate(save_animation, num_frames_in_animation,
+            fig, lat2d, lon2d, mesh, outdir)
 
     return
 
@@ -69,12 +59,7 @@ def cli():
                         help="destination directory of saved plots")
 
     parser.add_argument(
-        "--save-each-frame",
-        action=BooleanOptionalAction,
-        help="True to save each frame of timelapsed noise on grid to `outdir`."
-             " (default: False)",
-        required=True,
-        default=False)
+        "--save-animation", action=BooleanOptionalAction, default=False)
 
     default_plot_width_in_pixels = 4096
     parser.add_argument(
@@ -103,18 +88,51 @@ def cli():
     return args
 
 
-def update_frame(
-        lat2d, lon2d, mesh, outdir, fig, pbar, save_each_frame: bool = False):
-    def update(frame):
-        noise = generate_perlin_noise_field_on_latlon_mesh(lat2d, lon2d, frame)
-        mesh.set_array(noise.ravel())
-        filename = os.path.join(outdir, f"frame_{frame}.png")
-        # https://github.com/matplotlib/matplotlib/issues/2305#issuecomment-223996919
-        if save_each_frame:
+def animate(
+        save_animation,
+        num_frames_in_animation,
+        fig,
+        lat2d,
+        lon2d,
+        mesh,
+        outdir):
+
+    tqdm_desc = "Plotting frames"
+
+    if save_animation:
+        pbar = tqdm(total=num_frames_in_animation, desc=tqdm_desc)
+
+        animation = FuncAnimation(
+            fig,
+            update_frame(lat2d, lon2d, mesh, outdir, fig, pbar),
+            frames=num_frames_in_animation,
+            blit=True)
+
+        animation.save(os.path.join(outdir, "anim.gif"))
+
+        pbar.close()
+    else:
+        for frame in tqdm(range(num_frames_in_animation), desc=tqdm_desc):
+            update_mesh(mesh, lat2d, lon2d, frame)
+            filename = os.path.join(outdir, f"frame_{frame}.png")
             fig.savefig(filename)
+    return
+
+
+def update_frame(lat2d, lon2d, mesh, outdir, fig, pbar):
+    def update(frame):
+        update_mesh(mesh, lat2d, lon2d, frame)
+        filename = os.path.join(outdir, f"frame_{frame}.png")
+        fig.savefig(filename)
         pbar.update(1)
         return [mesh]
     return update
+
+
+def update_mesh(mesh, lat2d, lon2d, frame):
+    noise = generate_perlin_noise_field_on_latlon_mesh(lat2d, lon2d, frame)
+    mesh.set_array(noise.ravel())
+    return
 
 
 def generate_perlin_noise_field_on_latlon_mesh(
