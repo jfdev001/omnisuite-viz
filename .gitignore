@@ -1,3 +1,6 @@
 .venv 
 **/*.swp
 #data/
+tmp/
+
+**/__pycache__
