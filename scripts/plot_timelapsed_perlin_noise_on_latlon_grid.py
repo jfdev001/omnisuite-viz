@@ -8,6 +8,7 @@ from numpy import ndarray
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
+from tqdm import tqdm
 
 
 def main():
@@ -43,12 +44,18 @@ def main():
         transform=ccrs.PlateCarree(),
         cmap='coolwarm')
 
+    pbar = tqdm(total=num_frames_in_animation, desc="Plotting frames")
+
+    # TODO: saving the animation takes a long time... could just iter through
+    # nframes...
     animation = FuncAnimation(
         fig,
-        update_frame(lat2d, lon2d, mesh, outdir, fig, save_each_frame),
+        update_frame(lat2d, lon2d, mesh, outdir,
+                     fig, pbar, save_each_frame),
         frames=num_frames_in_animation)
 
     animation.save(os.path.join(outdir, "anim.gif"))
+    pbar.close()
 
     return
 
@@ -97,7 +104,7 @@ def cli():
 
 
 def update_frame(
-        lat2d, lon2d, mesh, outdir, fig, save_each_frame: bool = False):
+        lat2d, lon2d, mesh, outdir, fig, pbar, save_each_frame: bool = False):
     def update(frame):
         noise = generate_perlin_noise_field_on_latlon_mesh(lat2d, lon2d, frame)
         mesh.set_array(noise.ravel())
@@ -105,6 +112,7 @@ def update_frame(
         # https://github.com/matplotlib/matplotlib/issues/2305#issuecomment-223996919
         if save_each_frame:
             fig.savefig(filename)
+        pbar.update(1)
         return [mesh]
     return update
 
