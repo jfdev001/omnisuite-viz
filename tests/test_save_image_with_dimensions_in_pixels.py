@@ -49,7 +49,7 @@ class TestSaveImageWithDimensionsInPixels(unittest.TestCase):
                 return [mesh]
             return update
 
-        with tempfile.TemporaryDirectory(delete=False) as temp_dir_name:
+        with tempfile.TemporaryDirectory() as temp_dir_name:
             animation = FuncAnimation(
                 fig,
                 update_animation_clojure(fig, temp_dir_name, mesh),
