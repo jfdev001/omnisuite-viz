@@ -1,8 +1,3 @@
-""" 
-
-NOTE: tempfile with + .png doesn't save ...
-"""
-
 import unittest
 import cartopy.crs as ccrs
 from matplotlib.animation import FuncAnimation
