@@ -73,11 +73,9 @@ class TestSaveImageWithDimensionsInPixels(unittest.TestCase):
         return
 
     def assert_image_dimensions(self, temp_fpath):
-        print(temp_fpath)
         with Image.open(temp_fpath) as image:
             image_width_in_pixels = image.width
             image_height_in_pixels = image.height
-            print(image_width_in_pixels, image_height_in_pixels)
             self.assertEqual(image_width_in_pixels,
                              self.mpl_width_in_pixels)
             self.assertEqual(image_height_in_pixels,
