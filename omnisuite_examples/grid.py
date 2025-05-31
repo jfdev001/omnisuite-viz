@@ -1,14 +1,23 @@
-from abc import ABC, abstractproperty
-from numpy import linspace, meshgrid
+from abc import ABC, abstractmethod
+from numpy import linspace, meshgrid, ndarray
+from typing import Tuple
 
 
 class Grid(ABC):
-    @abstractproperty
-    def grid(self):
-        pass
+    @property
+    @abstractmethod
+    def grid(self) -> Tuple[ndarray, ...]:
+        raise NotImplementedError
 
 
-class Globe(Grid):
+class Grid2D(Grid):
+    @property
+    @abstractmethod
+    def grid(self) -> Tuple[ndarray, ndarray]:
+        raise NotImplementedError
+
+
+class Globe(Grid2D):
     LONGITUDE_MIN = -180
     LONGITUDE_MAX = 180
     LATITUDE_MIN = -90
@@ -29,5 +38,8 @@ class Globe(Grid):
         self._latitude = linspace(
             latitude_min, latitude_max, num_latitude_points)
 
-    def grid(self):
-        return
+        self._longitude_mesh, self._latitude_mesh = meshgrid(
+            self._longitude, self._latitude)
+
+    def grid(self) -> Tuple[ndarray, ndarray]:
+        return self._longitude_mesh, self._latitude_mesh
