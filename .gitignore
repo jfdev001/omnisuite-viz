@@ -5,3 +5,4 @@ data/
 tmp/
 
 **/__pycache__
+**/*.egg-info
