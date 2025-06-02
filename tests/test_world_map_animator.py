@@ -14,7 +14,15 @@ class TestWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
         return world_map_animator
 
     def assert_animate(self):
+        """
+
+        An animation was successful when the number of frames in saved
+        animation (e.g., gif) matches the expected amount of frames.
+        """
         raise NotImplementedError
+
+    def cleanup_animate(self):
+        pass
 
 
 if __name__ == "__main__":
