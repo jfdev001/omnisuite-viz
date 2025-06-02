@@ -17,7 +17,7 @@ class Grid2D(Grid):
         raise NotImplementedError
 
 
-class Globe(Grid2D):
+class WorldMapGrid(Grid2D):
     LONGITUDE_MIN = -180
     LONGITUDE_MAX = 180
     LATITUDE_MIN = -90
@@ -46,5 +46,6 @@ class Globe(Grid2D):
         self._longitude_mesh, self._latitude_mesh = meshgrid(
             self._longitude, self._latitude)
 
+    @property
     def grid(self) -> Tuple[ndarray, ndarray]:
         return self._longitude_mesh, self._latitude_mesh
