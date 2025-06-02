@@ -12,6 +12,13 @@ class AnimatorTestMixin(ABC):
     [3] : https://stackoverflow.com/questions/34943878/how-should-a-python-unittest-superclass-method-reference-a-variable-in-its-cal
     """
 
+    def test_animate(self):
+        animator = self.make_concrete_animator()
+        animator.animate(save_animation=True)
+        self.assert_animate()
+        self.cleanup()
+        return
+
     @abstractmethod
     def make_concrete_animator(self) -> Animator:
         pass
@@ -20,8 +27,7 @@ class AnimatorTestMixin(ABC):
     def assert_animate(self):
         pass
 
-    def test_animate(self):
-        animator = self.make_concrete_animator()
-        animator.animate(save_animation=True)
-        self.assert_animate()
-        return
+    @abstractmethod
+    def cleanup_animate(self):
+        """Cleanup side effects of animate (e.g.,temporary files/dirs)."""
+        pass
