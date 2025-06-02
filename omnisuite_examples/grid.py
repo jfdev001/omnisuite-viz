@@ -32,6 +32,11 @@ class Globe(Grid2D):
             latitude_max=LATITUDE_MAX,
             num_latitude_points=180):
 
+        assert longitude_min >= self.LONGITUDE_MIN
+        assert longitude_max <= self.LONGITUDE_MAX
+        assert latitude_min >= self.LATITUDE_MIN
+        assert latitude_max <= self.LATITUDE_MAX
+
         self._longitude = linspace(
             longitude_min, longitude_max, num_longitude_points)
 
