@@ -47,22 +47,13 @@ class AnimatorConfig:
 
 @dataclass
 class OmniSuiteAnimatorConfig(AnimatorConfig):
-    global_width_in_pixels: int = 4096
-    global_height_in_pixels: int = 2048
+    plot_width_in_pixels: int = 4096
+    plot_height_in_pixels: int = 2048
     figsize: Tuple[int, int] = (
-        global_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
-        global_height_in_pixels*AnimatorConfig.INCH_PER_PIXEL)
+        plot_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
+        plot_height_in_pixels*AnimatorConfig.INCH_PER_PIXEL)
 
     pil_image_gif_loop: int = 0
     pil_image_duration_between_frames_in_ms: float = 500
 
-
-@dataclass
-class WorldMapAnimatorConfig(AnimatorConfig):
     projection: Projection = PlateCarree()
-
-
-@dataclass
-class OmniSuiteWorldMapAnimatorConfig(
-        OmniSuiteAnimatorConfig, WorldMapAnimatorConfig):
-    pass
