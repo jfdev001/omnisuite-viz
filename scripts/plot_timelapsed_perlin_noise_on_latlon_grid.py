@@ -1,11 +1,13 @@
-"""Plot perlin noise on Plate-Carree projection."""
-
-from argparse import ArgumentParser, BooleanOptionalAction
-import os
-
-from omnisuite_examples.grid import WorldMapGrid
-from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
 from omnisuite_examples.animator import PerlinNoiseAnimator
+from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
+from omnisuite_examples.grid import WorldMapGrid
+import os
+from argparse import ArgumentParser, BooleanOptionalAction
+
+DESCRIPTION = """
+Save animation frames (and optionally combine the frames to a gif) of Perlin
+noise on Plate-Carree projection.
+"""
 
 
 def main():
@@ -40,9 +42,7 @@ def main():
 
 
 def cli():
-    parser = ArgumentParser(
-        description="Save animation frames (and optionally combine the frames"
-                    " to a gif) of Perlin noise on Plate-Carree projection")
+    parser = ArgumentParser(description=DESCRIPTION)
 
     parser.add_argument("output_dir", type=str,
                         help="destination directory of saved plots")
