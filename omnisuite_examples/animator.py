@@ -1,14 +1,17 @@
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
+from noise import pnoise3
+from numpy import zeros_like
 from os import listdir
 from os.path import join
+import pdb
 from PIL import Image
 from typing import List
-import pdb
+from tqdm import tqdm
 
 from omnisuite_examples.grid import Grid, WorldMapGrid
 from omnisuite_examples.animator_config import (
-    AnimatorConfig, OmniSuiteWorldMapAnimatorConfig)
+    AnimatorConfig, OmniSuiteAnimatorConfig)
 
 
 class Animator(ABC):
@@ -23,6 +26,7 @@ class Animator(ABC):
         self._update_and_save_frames()
         if self._config.save_animation:
             self._save_animation()
+        print(f"Results written to: {self._config.output_dir}")
         return
 
     @abstractmethod
@@ -59,7 +63,7 @@ class Animator(ABC):
 class OmniSuiteWorldMapAnimator(Animator):
 
     def __init__(
-            self, grid: WorldMapGrid, config: OmniSuiteWorldMapAnimatorConfig):
+            self, grid: WorldMapGrid, config: OmniSuiteAnimatorConfig):
         self._grid = grid
         self._config = config
         self._fig = None
@@ -73,7 +77,9 @@ class OmniSuiteWorldMapAnimator(Animator):
         return
 
     def _update_and_save_frames(self):
-        for frame in range(self._config.num_frames_in_animation):
+        for frame in tqdm(
+                range(self._config.num_frames_in_animation),
+                desc="Updating frames"):
             self._update_frame(frame)
             frame_path = join(
                 self._config.output_dir,
@@ -85,13 +91,13 @@ class OmniSuiteWorldMapAnimator(Animator):
         self._ax.text(0, frame, frame)  # arbitrary modification
         return
 
-    def _open_frames(self) -> List[Image]:
-        frames: List[Image] = [
+    def _open_frames(self) -> List[Image.Image]:
+        frames: List[Image.Image] = [
             Image.open(join(self._config.output_dir, f))
             for f in listdir(self._config.output_dir)]
         return frames
 
-    def _save_frames_as_animation(self, frames: List[Image]):
+    def _save_frames_as_animation(self, frames: List[Image.Image]):
         frames[0].save(
             self._config.path_to_save_animation,
             save_all=True,
@@ -100,7 +106,56 @@ class OmniSuiteWorldMapAnimator(Animator):
             duration=self._config.pil_image_duration_between_frames_in_ms)
         return
 
-    def _close_frames(self, frames: List[Image]):
+    def _close_frames(self, frames: List[Image.Image]):
         for frame in frames:
             frame.close()
+        return
+
+
+class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._latitude_mesh = self._grid.latitude_mesh
+        self._longitude_mesh = self._grid.longitude_mesh
+        self._perlin_noise_field = zeros_like(self._latitude_mesh)
+
+        # NOTE: could create a new Config class with perlin noise values
+        self._spatial_scale = 0.05
+        self._temporal_scale = 0.02
+        self._seed = 42
+        return
+
+    def _plot_initial_frame(self):
+        self._fig = plt.figure(figsize=self._config.figsize)
+        self._ax = plt.axes(projection=self._config.projection)
+        self._ax.coastlines()
+
+        # if you don't initialize the noise field, pcolormesh renders nothing
+        self._update_perlin_noise_field(0)
+
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            self._perlin_noise_field,
+            transform=self._config.projection,
+            cmap="coolwarm"
+        )
+        return
+
+    def _update_frame(self, frame: int):
+        self._update_perlin_noise_field(frame)
+        self._mesh.set_array(self._perlin_noise_field.ravel())
+        return
+
+    def _update_perlin_noise_field(self, frame: int):
+        for i in range(self._perlin_noise_field.shape[0]):
+            for j in range(self._perlin_noise_field.shape[1]):
+                self._perlin_noise_field[i, j] = pnoise3(
+                    self._spatial_scale * self._longitude_mesh[i, j],
+                    self._spatial_scale * self._latitude_mesh[i, j],
+                    frame * self._temporal_scale,
+                    repeatx=360,
+                    repeaty=180,
+                    base=self._seed)
         return
