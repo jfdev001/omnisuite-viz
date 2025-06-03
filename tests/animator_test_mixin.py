@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import tempfile
 
 from omnisuite_examples.animator import Animator
 
@@ -12,11 +13,20 @@ class AnimatorTestMixin(ABC):
     [3] : https://stackoverflow.com/questions/34943878/how-should-a-python-unittest-superclass-method-reference-a-variable-in-its-cal
     """
 
+    @classmethod
+    def setUpClass(cls):
+        cls.temp_dir = tempfile.TemporaryDirectory()
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temp_dir.cleanup()
+        return
+
     def test_animate(self):
         animator = self.make_concrete_animator()
         animator.animate()
         self.assert_animate()
-        self.cleanup_animate()
         return
 
     @abstractmethod
@@ -25,9 +35,4 @@ class AnimatorTestMixin(ABC):
 
     @abstractmethod
     def assert_animate(self):
-        pass
-
-    @abstractmethod
-    def cleanup_animate(self):
-        """Cleanup side effects of animate (e.g.,temporary files/dirs)."""
         pass
