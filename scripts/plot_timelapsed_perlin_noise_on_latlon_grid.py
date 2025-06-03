@@ -1,14 +1,7 @@
 """Plot perlin noise on Plate-Carree projection."""
 
 from argparse import ArgumentParser, BooleanOptionalAction
-import cartopy.crs as ccrs
-from noise import pnoise3  # Perlin noise in 3D
-import numpy as np
-from numpy import ndarray
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import os
-from tqdm import tqdm
 
 from omnisuite_examples.grid import WorldMapGrid
 from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
