@@ -1,27 +1,23 @@
 from abc import ABC, abstractmethod
 from cartopy.crs import PlateCarree
 import matplotlib.pyplot as plt
-from os.path import exists
 
 from omnisuite_examples.grid import Grid, WorldMapGrid
+from omnisuite_examples.animator_config import (AnimatorConfig,
+                                                OmniSuiteWorldMapAnimatorConfig)
 
 
 class Animator(ABC):
-    INCH_PER_PIXEL = 1/plt.rcParams['figure.dpi']
 
-    @abstractmethod
-    def __init__(self, grid: Grid, output_dir: str):
-        pass
+    def __init__(self, grid: Grid, config: AnimatorConfig):
+        self._grid = grid
+        self._config = config
+        return
 
-    @property
-    def output_dir(self) -> str:
-        assert exists(self._output_dir)
-        return self._output_dir
-
-    def animate(self, save_animation: bool):
+    def animate(self):
         self._plot_initial_frame()
         self._save_frames()
-        if save_animation:
+        if self._config.save_animation:
             self._save_frames_as_animation()
         return
 
@@ -43,28 +39,19 @@ class Animator(ABC):
         pass
 
 
-class WorldMapAnimator(Animator):
-    # TODO: what if you want multiple instances of WorldMapAnimator... each
-    # with different configuration here...
-    # TODO: This config stuff is not related to the test!!!
-    projection = PlateCarree()
+class OmniSuiteWorldMapAnimator(Animator):
 
-    # add an nframes term needed for update frames???
-    # figsize = (4096*Animator.INCH_PER_PIXEL, 2048*Animator.INCH_PER_PIXEL)
-
-    def __init__(self, grid: WorldMapGrid, output_dir: str):
+    def __init__(
+            self, grid: WorldMapGrid, config: OmniSuiteWorldMapAnimatorConfig):
         self._grid = grid
-
-        self._output_dir = output_dir
-
-        self._fig = None
-        self._ax = None
+        self._config = config
         return
 
     def _plot_initial_frame(self):
-        self._fig = plt.figure()
+        self._fig = plt.figure(figsize=self._config.figsize)
         self._ax = plt.axes(projection=self.projection)
         self._ax.coastlines()
+
         return
 
     def _save_frames(self):

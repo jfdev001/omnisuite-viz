@@ -11,8 +11,7 @@ class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
     def make_concrete_animator(self):
         output_dir = ""  # TODO: use tempfile... elegant way to have context...
         grid = WorldMapGrid()
-        config = OmniSuiteWorldMapAnimatorConfig(
-            save_animation=True, output_dir=output_dir)
+        config = OmniSuiteWorldMapAnimatorConfig()
         omnisuite_world_map_animator = OmniSuiteWorldMapAnimator(grid, config)
         return omnisuite_world_map_animator
 

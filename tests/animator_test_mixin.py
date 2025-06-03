@@ -14,9 +14,9 @@ class AnimatorTestMixin(ABC):
 
     def test_animate(self):
         animator = self.make_concrete_animator()
-        animator.animate(save_animation=True)
+        animator.animate()
         self.assert_animate()
-        self.cleanup()
+        self.cleanup_animate()
         return
 
     @abstractmethod
