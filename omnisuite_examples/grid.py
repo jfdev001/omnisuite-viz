@@ -6,14 +6,14 @@ from typing import Tuple
 class Grid(ABC):
     @property
     @abstractmethod
-    def grid(self) -> Tuple[ndarray, ...]:
+    def mesh(self) -> Tuple[ndarray, ...]:
         raise NotImplementedError
 
 
 class Grid2D(Grid):
     @property
     @abstractmethod
-    def grid(self) -> Tuple[ndarray, ndarray]:
+    def mesh(self) -> Tuple[ndarray, ndarray]:
         raise NotImplementedError
 
 
@@ -47,5 +47,21 @@ class WorldMapGrid(Grid2D):
             self._longitude, self._latitude)
 
     @property
-    def grid(self) -> Tuple[ndarray, ndarray]:
+    def mesh(self) -> Tuple[ndarray, ndarray]:
         return self._longitude_mesh, self._latitude_mesh
+
+    @property
+    def longitude_mesh(self) -> ndarray:
+        return self._longitude_mesh
+
+    @property
+    def longitude(self) -> ndarray:
+        return self._longitude
+
+    @property
+    def latitude_mesh(self) -> ndarray:
+        return self._latitude_mesh
+
+    @property
+    def latitude(self) -> ndarray:
+        return self._latitude
