@@ -6,7 +6,7 @@ import unittest
 from tests.animator_test_mixin import AnimatorTestMixin
 from omnisuite_examples.grid import WorldMapGrid
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import OmniSuiteWorldMapAnimatorConfig
+from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
 
 
 class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
@@ -16,7 +16,7 @@ class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
 
         output_dir = self.temp_dir.name
         self.num_frames_in_animation = 5
-        self._config = OmniSuiteWorldMapAnimatorConfig(
+        self._config = OmniSuiteAnimatorConfig(
             save_animation=True,
             output_dir=output_dir,
             num_frames_in_animation=self.num_frames_in_animation)
