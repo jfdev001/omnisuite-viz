@@ -64,7 +64,7 @@ def cli():
         help=f" (default: {default_plot_height_in_pixels})",
         default=default_plot_height_in_pixels)
 
-    default_num_frames_in_animation = 366
+    default_num_frames_in_animation = 10
     parser.add_argument(
         "--num_frames_in_animation",
         help=f"default: {default_num_frames_in_animation}",
