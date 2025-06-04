@@ -66,8 +66,8 @@ class OmniSuiteWorldMapAnimator(Animator):
             self, grid: WorldMapGrid, config: OmniSuiteAnimatorConfig):
         self._grid = grid
         self._config = config
-        self._fig = None
-        self._ax = None
+        self._fig = None # TODO: maybe instantiate and configure here
+        self._ax = None  # same here to make sure minimal (i.e., rect needed)
         return
 
     def _plot_initial_frame(self):
