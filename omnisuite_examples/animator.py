@@ -141,10 +141,10 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         """
         self._fig = plt.figure(figsize=self._config.figsize)
         self._ax = plt.axes(projection=self._config.projection)
+        # TODO: it seems the coastlines must be reducing the extent or something
+        # here since the natural earth PNG in the in material editor loads
+        # appropriately...
         self._ax.coastlines(linewidth=5, color="red")
-        # overlay natural earth to match projection
-        # self._ax.stock_img(alpha=0.5)
-        # self.
         base_map_image, base_map_extent, base_map_projection =\
             self._load_base_map()
         self._ax.imshow(
@@ -154,23 +154,23 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
             origin='upper')
 
         # if you don't initialize the noise field, pcolormesh renders nothing
-        pdb.set_trace()
-        self._update_perlin_noise_field(0)
+        # pdb.set_trace()
+        # self._update_perlin_noise_field(0)
 
         # TODO: does pmesh correspond correctly to expected extent???
-        self._mesh = self._ax.pcolormesh(
-            self._grid.longitude,
-            self._grid.latitude,
-            self._perlin_noise_field,
-            transform=self._config.projection,
-            cmap="coolwarm"
-        )
+        # self._mesh = self._ax.pcolormesh(
+        # self._grid.longitude,
+        # self._grid.latitude,
+        # self._perlin_noise_field,
+        # transform=self._config.projection,
+        # cmap="coolwarm"
+        # )
 
         return
 
     def _update_frame(self, frame: int):
-        self._update_perlin_noise_field(frame)
-        self._mesh.set_array(self._perlin_noise_field.ravel())
+        # self._update_perlin_noise_field(frame)
+        # self._mesh.set_array(self._perlin_noise_field.ravel())
         return
 
     def _update_perlin_noise_field(self, frame: int):

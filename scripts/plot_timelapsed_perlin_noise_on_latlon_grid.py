@@ -50,21 +50,21 @@ def cli():
     parser.add_argument(
         "--save-animation", action=BooleanOptionalAction, default=False)
 
-    default_plot_width_in_pixels = 4096
+    default_plot_width_in_pixels = 2048
     parser.add_argument(
         "--plot_width_in_pixels",
         type=int,
         help=f" (default: {default_plot_width_in_pixels})",
         default=default_plot_width_in_pixels)
 
-    default_plot_height_in_pixels = 2048
+    default_plot_height_in_pixels = 1024
     parser.add_argument(
         "--plot_height_in_pixels",
         type=int,
         help=f" (default: {default_plot_height_in_pixels})",
         default=default_plot_height_in_pixels)
 
-    default_num_frames_in_animation = 10
+    default_num_frames_in_animation = 3
     parser.add_argument(
         "--num_frames_in_animation",
         help=f"default: {default_num_frames_in_animation}",
