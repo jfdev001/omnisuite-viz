@@ -27,11 +27,6 @@ class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
         return omnisuite_world_map_animator
 
     def assert_animate(self):
-        """
-
-        An animation was successful when the number of frames in saved
-        animation (e.g., gif) matches the expected amount of frames.
-        """
         with Image.open(self._config.path_to_save_animation) as gif:
             n_frames_in_gif = gif.n_frames
             self.assertEqual(n_frames_in_gif, self.num_frames_in_animation)

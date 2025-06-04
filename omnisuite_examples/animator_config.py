@@ -55,7 +55,11 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
 
     projection: Projection = PlateCarree()
 
+    # TODO: better default
+    base_map_path: str = "tmp/tutorial_Story_Creation_Basics/natural_earth.png"
+
     def __post_init__(self):
+        super().__post_init__()
         if self.figsize is None:
             self.figsize = (
                 self.plot_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
