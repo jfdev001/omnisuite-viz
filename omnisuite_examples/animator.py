@@ -74,14 +74,7 @@ class OmniSuiteWorldMapAnimator(Animator):
         self._fig = plt.figure(figsize=self._config.figsize)
         self._ax = plt.axes(projection=self._config.projection)
         self._ax.coastlines()
-
         return
-
-    def _load_base_map(self):
-        img = plt.imread(self._config.base_map_path)
-        img_extent = (-180, 180, -90, 90)  # TODO: config for local area
-        img_proj = self._config.projection  # TODO: make config? prob not
-        return img, img_extent, img_proj
 
     def _update_and_save_frames(self):
         for frame in tqdm(
@@ -95,7 +88,7 @@ class OmniSuiteWorldMapAnimator(Animator):
         return
 
     def _update_frame(self, frame: int):
-        self._ax.text(0, frame, frame)  # arbitrary modification
+        self._ax.text(0, frame, frame)  # arbitrary modification needed for gif
         return
 
     def _open_frames(self) -> List[Image.Image]:
@@ -140,37 +133,28 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         [1]: https://gradsaddict.blogspot.com/2019/12/python-tutorial-blue-and-black-marble.html
         """
         self._fig = plt.figure(figsize=self._config.figsize)
-        self._ax = plt.axes(projection=self._config.projection)
-        # TODO: it seems the coastlines must be reducing the extent or something
-        # here since the natural earth PNG in the in material editor loads
-        # appropriately...
-        self._ax.coastlines(linewidth=5, color="red")
-        base_map_image, base_map_extent, base_map_projection =\
-            self._load_base_map()
-        self._ax.imshow(
-            base_map_image,
-            extent=base_map_extent,
-            transform=base_map_projection,
-            origin='upper')
+        rectangle_for_full_plot = [0, 0, 1, 1]  # Must for correct img size
+        self._ax = plt.axes(
+            rectangle_for_full_plot, projection=self._config.projection)
+        self._ax.coastlines()
+        self._ax.axis("off")
 
-        # if you don't initialize the noise field, pcolormesh renders nothing
-        # pdb.set_trace()
-        # self._update_perlin_noise_field(0)
+        # If you don't initialize the noise field, pcolormesh renders nothing
+        self._update_perlin_noise_field(0)
 
-        # TODO: does pmesh correspond correctly to expected extent???
-        # self._mesh = self._ax.pcolormesh(
-        # self._grid.longitude,
-        # self._grid.latitude,
-        # self._perlin_noise_field,
-        # transform=self._config.projection,
-        # cmap="coolwarm"
-        # )
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            self._perlin_noise_field,
+            transform=self._config.projection,
+            cmap="coolwarm"
+        )
 
         return
 
     def _update_frame(self, frame: int):
-        # self._update_perlin_noise_field(frame)
-        # self._mesh.set_array(self._perlin_noise_field.ravel())
+        self._update_perlin_noise_field(frame)
+        self._mesh.set_array(self._perlin_noise_field.ravel())
         return
 
     def _update_perlin_noise_field(self, frame: int):
