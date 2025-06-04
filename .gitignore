@@ -2,7 +2,7 @@
 **/*.swp
 
 data/
-tmp/
+tmp*/
 
 **/__pycache__
 **/*.egg-info
