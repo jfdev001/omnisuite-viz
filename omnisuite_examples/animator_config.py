@@ -2,7 +2,7 @@ from cartopy.crs import Projection, PlateCarree
 from dataclasses import dataclass
 from matplotlib.pyplot import rcParams
 from os.path import exists, join
-from typing import ClassVar, Tuple, Dict
+from typing import ClassVar, Tuple, Optional
 
 
 @dataclass
@@ -49,11 +49,18 @@ class AnimatorConfig:
 class OmniSuiteAnimatorConfig(AnimatorConfig):
     plot_width_in_pixels: int = 4096
     plot_height_in_pixels: int = 2048
-    figsize: Tuple[int, int] = (
-        plot_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
-        plot_height_in_pixels*AnimatorConfig.INCH_PER_PIXEL)
-
+    figsize: Optional[Tuple[int, int]] = None
     pil_image_gif_loop: int = 0
     pil_image_duration_between_frames_in_ms: float = 500
 
     projection: Projection = PlateCarree()
+
+    # TODO: better default
+    base_map_path: str = "tmp/tutorial_Story_Creation_Basics/natural_earth.png"
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.figsize is None:
+            self.figsize = (
+                self.plot_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
+                self.plot_height_in_pixels*AnimatorConfig.INCH_PER_PIXEL)

@@ -88,7 +88,7 @@ class OmniSuiteWorldMapAnimator(Animator):
         return
 
     def _update_frame(self, frame: int):
-        self._ax.text(0, frame, frame)  # arbitrary modification
+        self._ax.text(0, frame, frame)  # arbitrary modification needed for gif
         return
 
     def _open_frames(self) -> List[Image.Image]:
@@ -127,11 +127,19 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         return
 
     def _plot_initial_frame(self):
-        self._fig = plt.figure(figsize=self._config.figsize)
-        self._ax = plt.axes(projection=self._config.projection)
-        self._ax.coastlines()
+        """
 
-        # if you don't initialize the noise field, pcolormesh renders nothing
+        References:
+        [1]: https://gradsaddict.blogspot.com/2019/12/python-tutorial-blue-and-black-marble.html
+        """
+        self._fig = plt.figure(figsize=self._config.figsize)
+        rectangle_for_full_plot = [0, 0, 1, 1]  # Must for correct img size
+        self._ax = plt.axes(
+            rectangle_for_full_plot, projection=self._config.projection)
+        self._ax.coastlines()
+        self._ax.axis("off")
+
+        # If you don't initialize the noise field, pcolormesh renders nothing
         self._update_perlin_noise_field(0)
 
         self._mesh = self._ax.pcolormesh(
@@ -141,6 +149,7 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
             transform=self._config.projection,
             cmap="coolwarm"
         )
+
         return
 
     def _update_frame(self, frame: int):
