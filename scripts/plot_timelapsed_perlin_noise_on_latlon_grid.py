@@ -48,7 +48,11 @@ def cli():
                         help="destination directory of saved plots")
 
     parser.add_argument(
-        "--save-animation", action=BooleanOptionalAction, default=False)
+        "--save-animation",
+        help="True to convert frames to animation, False otherwise."
+             " (default: False)",
+        action=BooleanOptionalAction,
+        default=False)
 
     default_plot_width_in_pixels = 2048
     parser.add_argument(
