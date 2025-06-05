@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from matplotlib.pyplot import rcParams
 from os.path import exists, join
 from typing import ClassVar, Tuple, Optional
+import re
 
 
 @dataclass
@@ -15,7 +16,7 @@ class AnimatorConfig:
     path_to_save_animation: str = None
 
     INCH_PER_PIXEL: ClassVar[float] = 1 / rcParams['figure.dpi']
-    formatted_file_name_per_frame: str = "%d.png"
+    formatted_file_name_per_frame: str = "frame_%d.png"
 
     def __post_init__(self):
         assert exists(self.output_dir)
@@ -24,9 +25,17 @@ class AnimatorConfig:
             self.path_to_save_animation = join(
                 self.output_dir, "animation.gif")
 
-        assert self._is_valid_file_name_format()
+        # See pg. 41 of OmniSuite 6.0 manual
+        # https://globoccess.com/omnisuite/documents/OmniSuite_6-0_manual.pdf
+        # makes sure fname matches '[texture-name]_.*'
+        valid_omnisuite_animation_file_name_pattern = r"^[a-zA-Z]+_.*$"
+        assert re.match(
+            valid_omnisuite_animation_file_name_pattern,
+            self.formatted_file_name_per_frame)
 
-    def _is_valid_file_name_format(self) -> bool:
+        assert self._is_formattable_file_name()
+
+    def _is_formattable_file_name(self) -> bool:
         return self._is_valid_percent_format()\
             and self._is_valid_brace_format()
 
