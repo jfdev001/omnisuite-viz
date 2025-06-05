@@ -62,18 +62,25 @@ class Animator(ABC):
 
 class OmniSuiteWorldMapAnimator(Animator):
 
+    @staticmethod
+    def get_rectangle_for_full_plot_on_omniglobe():
+        rectangle_for_full_plot_on_omniglobe = [0, 0, 1, 1]
+        return rectangle_for_full_plot_on_omniglobe
+
     def __init__(
             self, grid: WorldMapGrid, config: OmniSuiteAnimatorConfig):
         self._grid = grid
         self._config = config
-        self._fig = None
-        self._ax = None
+
         return
 
     def _plot_initial_frame(self):
         self._fig = plt.figure(figsize=self._config.figsize)
-        self._ax = plt.axes(projection=self._config.projection)
+        self._ax = plt.axes(
+            self.get_rectangle_for_full_plot_on_omniglobe(),
+            projection=self._config.projection)
         self._ax.coastlines()
+        self._ax.axis("off")
         return
 
     def _update_and_save_frames(self):
@@ -132,12 +139,7 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         References:
         [1]: https://gradsaddict.blogspot.com/2019/12/python-tutorial-blue-and-black-marble.html
         """
-        self._fig = plt.figure(figsize=self._config.figsize)
-        rectangle_for_full_plot = [0, 0, 1, 1]  # Must for correct img size
-        self._ax = plt.axes(
-            rectangle_for_full_plot, projection=self._config.projection)
-        self._ax.coastlines()
-        self._ax.axis("off")
+        super()._plot_initial_frame()
 
         # If you don't initialize the noise field, pcolormesh renders nothing
         self._update_perlin_noise_field(0)
