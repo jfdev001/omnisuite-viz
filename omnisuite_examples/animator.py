@@ -144,11 +144,6 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         return
 
     def _plot_initial_frame(self):
-        """
-
-        References:
-        [1]: https://gradsaddict.blogspot.com/2019/12/python-tutorial-blue-and-black-marble.html
-        """
         # If you don't initialize the noise field, pcolormesh renders nothing
         self._update_perlin_noise_field(0)
 
