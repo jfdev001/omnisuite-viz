@@ -1,5 +1,5 @@
 from cartopy.crs import Projection, PlateCarree
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from matplotlib.pyplot import rcParams
 from os.path import exists, join
 from typing import ClassVar, Tuple, Optional
@@ -54,6 +54,8 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
     pil_image_duration_between_frames_in_ms: float = 500
 
     projection: Projection = PlateCarree()
+
+    coastlines_kwargs: dict = field(default_factory=dict)
 
     # TODO: better default
     base_map_path: str = "tmp/tutorial_Story_Creation_Basics/natural_earth.png"
