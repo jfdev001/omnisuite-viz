@@ -22,12 +22,17 @@ class Animator(ABC):
         return
 
     def animate(self):
+        self._configure_initial_frame()
         self._plot_initial_frame()
         self._update_and_save_frames()
         if self._config.save_animation:
             self._save_animation()
         print(f"Results written to: {self._config.output_dir}")
         return
+
+    @abstractmethod
+    def _configure_initial_frame():
+        pass
 
     @abstractmethod
     def _plot_initial_frame(self):
@@ -61,7 +66,7 @@ class Animator(ABC):
 
 
 class OmniSuiteWorldMapAnimator(Animator):
-
+    """Animate world map frames that can be used in OmniSuite."""
     @staticmethod
     def get_rectangle_for_full_plot_on_omniglobe():
         rectangle_for_full_plot_on_omniglobe = [0, 0, 1, 1]
@@ -74,13 +79,16 @@ class OmniSuiteWorldMapAnimator(Animator):
 
         return
 
-    def _plot_initial_frame(self):
+    def _configure_initial_frame(self):
         self._fig = plt.figure(figsize=self._config.figsize)
         self._ax = plt.axes(
             self.get_rectangle_for_full_plot_on_omniglobe(),
             projection=self._config.projection)
-        self._ax.coastlines()
         self._ax.axis("off")
+        self._ax.coastlines(**self._config.coastlines_kwargs)
+        return
+
+    def _plot_initial_frame(self):
         return
 
     def _update_and_save_frames(self):
@@ -120,6 +128,8 @@ class OmniSuiteWorldMapAnimator(Animator):
 
 
 class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
+    """Animate Perlin noise on a world map."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -139,8 +149,6 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         References:
         [1]: https://gradsaddict.blogspot.com/2019/12/python-tutorial-blue-and-black-marble.html
         """
-        super()._plot_initial_frame()
-
         # If you don't initialize the noise field, pcolormesh renders nothing
         self._update_perlin_noise_field(0)
 
