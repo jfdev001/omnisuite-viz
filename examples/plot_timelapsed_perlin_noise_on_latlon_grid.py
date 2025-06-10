@@ -1,8 +1,11 @@
-from omnisuite_examples.animator import PerlinNoiseAnimator
+from argparse import ArgumentParser, BooleanOptionalAction
+from numpy import zeros_like
+from noise import pnoise3
+import os
+
+from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
 from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
 from omnisuite_examples.grid import WorldMapGrid
-import os
-from argparse import ArgumentParser, BooleanOptionalAction
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of Perlin
@@ -74,6 +77,54 @@ def cli():
     args = parser.parse_args()
 
     return args
+
+
+class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
+    """Animate Perlin noise on a world map."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._latitude_mesh = self._grid.latitude_mesh
+        self._longitude_mesh = self._grid.longitude_mesh
+        self._perlin_noise_field = zeros_like(self._latitude_mesh)
+
+        # NOTE: could create a new Config class with perlin noise values
+        self._spatial_scale = 0.05
+        self._temporal_scale = 0.02
+        self._seed = 42
+        return
+
+    def _plot_initial_frame(self):
+        # If you don't initialize the noise field, pcolormesh renders nothing
+        self._update_perlin_noise_field(0)
+
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            self._perlin_noise_field,
+            transform=self._config.projection,
+            cmap="coolwarm"
+        )
+
+        return
+
+    def _update_frame(self, frame: int):
+        self._update_perlin_noise_field(frame)
+        self._mesh.set_array(self._perlin_noise_field.ravel())
+        return
+
+    def _update_perlin_noise_field(self, frame: int):
+        for i in range(self._perlin_noise_field.shape[0]):
+            for j in range(self._perlin_noise_field.shape[1]):
+                self._perlin_noise_field[i, j] = pnoise3(
+                    self._spatial_scale * self._longitude_mesh[i, j],
+                    self._spatial_scale * self._latitude_mesh[i, j],
+                    frame * self._temporal_scale,
+                    repeatx=360,
+                    repeaty=180,
+                    base=self._seed)
+        return
 
 
 if __name__ == "__main__":
