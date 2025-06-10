@@ -33,18 +33,7 @@ class AnimatorConfig:
             valid_omnisuite_animation_file_name_pattern,
             self.formatted_file_name_per_frame)
 
-        assert self._is_formattable_file_name()
-
-    def _is_formattable_file_name(self) -> bool:
-        return self._is_valid_percent_format()\
-            and self._is_valid_brace_format()
-
-    def _is_valid_brace_format(self) -> bool:
-        try:
-            self.formatted_file_name_per_frame.format(1)
-            return True
-        except (IndexError, KeyError, ValueError):
-            return False
+        assert self._is_valid_percent_format()
 
     def _is_valid_percent_format(self) -> bool:
         try:
