@@ -6,14 +6,15 @@ from typing import ClassVar, Tuple, Optional
 import re
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AnimatorConfig:
 
     save_animation: bool
-    num_frames_in_animation: int
 
     output_dir: str
     path_to_save_animation: str = None
+
+    num_frames_in_animation: Optional[int] = None
 
     INCH_PER_PIXEL: ClassVar[float] = 1 / rcParams['figure.dpi']
     formatted_file_name_per_frame: str = "frame_%d.png"
@@ -43,7 +44,7 @@ class AnimatorConfig:
             return False
 
 
-@dataclass
+@dataclass(kw_only=True)
 class OmniSuiteAnimatorConfig(AnimatorConfig):
     plot_width_in_pixels: int = 4096
     plot_height_in_pixels: int = 2048
@@ -52,6 +53,7 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
     pil_image_duration_between_frames_in_ms: float = 500
 
     projection: Projection = PlateCarree()
+    transform: Projection = PlateCarree()
 
     coastlines_kwargs: dict = field(default_factory=dict)
 

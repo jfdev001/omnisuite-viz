@@ -1,5 +1,6 @@
 numpy
 matplotlib
+netCDF4
 cartopy
 noise # perlin noise: https://pypi.org/project/noise/
 tqdm
