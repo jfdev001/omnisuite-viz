@@ -93,6 +93,9 @@ class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
         self._spatial_scale = 0.05
         self._temporal_scale = 0.02
         self._seed = 42
+
+        self._mesh = None
+
         return
 
     def _plot_initial_frame(self):
