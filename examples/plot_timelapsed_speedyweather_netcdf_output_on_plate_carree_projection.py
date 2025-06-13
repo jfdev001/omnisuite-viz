@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, BooleanOptionalAction
 from dataclasses import dataclass
-from matplotlib.pyplot import imread, show
+from matplotlib.pyplot import imread
 from netCDF4 import Dataset
 from numpy import ndarray
 from os import environ
@@ -204,7 +204,7 @@ class SpeedyWeatherAnimatorConfig(OmniSuiteAnimatorConfig):
             " https://zenodo.org/records/15639060"
         assert exists(self.blue_marble_path)
 
-        # Load the netcdf data you need for plotting 
+        # Load the netcdf data you need for plotting
         # NOTE: side effects... and doing work? bad design...
         self.ncfile = Dataset(self.netcdf_file_path)
         n_times = self.ncfile.variables[self.TIME_NETCDF_VAR_NAME].shape[0]
