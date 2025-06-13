@@ -5,7 +5,7 @@ import os
 
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
 from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
-from omnisuite_examples.grid import WorldMapGrid
+from omnisuite_examples.grid import WorldMapRectangularGrid
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of Perlin
@@ -28,7 +28,7 @@ def main():
     num_frames_in_animation: int = args.num_frames_in_animation
 
     # perform animation
-    grid = WorldMapGrid()
+    grid = WorldMapRectangularGrid()
 
     config = OmniSuiteAnimatorConfig(  # TODO: could read from yml/json
         save_animation=save_animation,

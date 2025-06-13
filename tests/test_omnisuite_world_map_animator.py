@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from tests.animator_test_mixin import AnimatorTestMixin
-from omnisuite_examples.grid import WorldMapGrid
+from omnisuite_examples.grid import WorldMapRectangularGrid
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
 from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
 
@@ -12,7 +12,7 @@ from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
 class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
     def make_concrete_animator(self):
 
-        grid = WorldMapGrid()
+        grid = WorldMapRectangularGrid()
 
         output_dir = self.temp_dir.name
         self.num_frames_in_animation = 5

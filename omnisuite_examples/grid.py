@@ -17,7 +17,23 @@ class Grid2D(Grid):
         raise NotImplementedError
 
 
-class WorldMapGrid(Grid2D):
+class LatLonGrid(Grid2D):
+    @property
+    @abstractmethod
+    def latitude(self):
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def longitude(self) -> ndarray:
+        raise NotImplementedError
+
+    @property
+    def mesh(self) -> Tuple[ndarray, ndarray]:
+        return self.latitude, self.longitude
+
+
+class WorldMapRectangularGrid(LatLonGrid):
     LONGITUDE_MIN = -180
     LONGITUDE_MAX = 180
     LATITUDE_MIN = -90
@@ -65,3 +81,10 @@ class WorldMapGrid(Grid2D):
     @property
     def latitude(self) -> ndarray:
         return self._latitude
+
+
+class WorldMapNetcdfGrid(LatLonGrid):
+    def __init__(self, latitude: ndarray, longitude: ndarray):
+        self._latitude = latitude
+        self._longitude = longitude
+        return

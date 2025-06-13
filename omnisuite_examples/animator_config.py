@@ -67,7 +67,11 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
 
 @dataclass(kw_only=True)
 class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
-    netcdf_file_path: str
+    LATITUDE_NETCDF_VAR_NAME: ClassVar[str] = "lat"
+    LONGITUDE_NETCDF_VAR_NAME: ClassVar[str] = "lon"
+    TIME_NETCDF_VAR_NAME: ClassVar[str] = "time"
+
+    netcdf_response_var_file_path: str
 
     blue_marble_path: str
     blue_marble_extent = (-180, 180, -90, 90)  # full blue marble
@@ -79,7 +83,7 @@ class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
 
     def __post_init__(self):
         super().__post_init__()
-        assert exists(self.netcdf_file_path), \
+        assert exists(self.netcdf_response_var_file_path), \
             "You can download an example NetCDF file from" +\
             " https://zenodo.org/records/15639060"
         assert exists(self.blue_marble_path), \
