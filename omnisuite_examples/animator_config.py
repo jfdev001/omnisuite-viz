@@ -1,6 +1,6 @@
 from cartopy.crs import Projection, PlateCarree
 from dataclasses import dataclass, field
-from matplotlib.pyplot import rcParams
+from matplotlib.pyplot import rcParams, imread
 from os.path import exists, join
 from typing import ClassVar, Tuple, Optional
 import re
@@ -63,3 +63,26 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
             self.figsize = (
                 self.plot_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
                 self.plot_height_in_pixels*AnimatorConfig.INCH_PER_PIXEL)
+
+
+@dataclass(kw_only=True)
+class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
+    netcdf_file_path: str
+
+    blue_marble_path: str
+    blue_marble_extent = (-180, 180, -90, 90)  # full blue marble
+
+    netcdf_long_name_of_var_to_plot: str
+
+    netcdf_var_transparency_on_plot: float = 0.30
+    netcdf_var_cmap_on_plot: str = "bwr"
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert exists(self.netcdf_file_path), \
+            "You can download an example NetCDF file from" +\
+            " https://zenodo.org/records/15639060"
+        assert exists(self.blue_marble_path), \
+            "You can download blue marble PNGs from" +\
+            "https://neo.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG"
+        return

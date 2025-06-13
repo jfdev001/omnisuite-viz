@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
+from omnisuite_examples.animator_config import NetcdfAnimatorConfig
 from omnisuite_examples.grid import WorldMapGrid
 
 DESCRIPTION = """
@@ -167,8 +167,8 @@ class SpeedyWeatherAnimator(OmniSuiteWorldMapAnimator):
             zorder=2,  # must have for data plotted "on top of" blue marble
             antialiased=True,
             transform=self._config.transform,
-            alpha=self._config.alpha,
-            cmap=self._config.cmap,)
+            alpha=self._config.netcdf_var_transparency_on_plot,
+            cmap=self._config.netcdf_var_cmap_on_plot)
 
         return
 
@@ -180,29 +180,15 @@ class SpeedyWeatherAnimator(OmniSuiteWorldMapAnimator):
 
 
 @dataclass(kw_only=True)
-class SpeedyWeatherAnimatorConfig(OmniSuiteAnimatorConfig):
+class SpeedyWeatherAnimatorConfig(NetcdfAnimatorConfig):
     LATITUDE_NETCDF_VAR_NAME: ClassVar[str] = "lat"
     LONGITUDE_NETCDF_VAR_NAME: ClassVar[str] = "lon"
     TIME_NETCDF_VAR_NAME: ClassVar[str] = "time"
 
-    netcdf_file_path: str
-
-    blue_marble_path: str
-    blue_marble_extent = (-180, 180, -90, 90)  # full blue marble
-
-    vertical_layer: int
-
-    netcdf_long_name_of_var_to_plot: str = "zonal wind"
-
-    alpha: float = 0.30
-    cmap: str = "bwr"
+    vertical_layer: int = 15
 
     def __post_init__(self):
         super().__post_init__()
-        assert exists(self.netcdf_file_path), \
-            "You can download an example NetCDF file from" +\
-            " https://zenodo.org/records/15639060"
-        assert exists(self.blue_marble_path)
 
         # Load the netcdf data you need for plotting
         # NOTE: side effects... and doing work? bad design...
@@ -218,7 +204,6 @@ class SpeedyWeatherAnimatorConfig(OmniSuiteAnimatorConfig):
             self.netcdf_long_name_of_var_to_plot]
 
         self.blue_marble_img = imread(self.blue_marble_path)
-
         return
 
     def __del__(self):
