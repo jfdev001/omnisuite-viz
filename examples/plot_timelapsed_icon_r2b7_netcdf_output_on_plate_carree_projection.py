@@ -48,8 +48,12 @@ def main():
 
     blue_marble_path: str = args.blue_marble_path
 
-    cmap: str = args.cmap
+    min_vertical_layer_height_in_meters: float = (
+        args.min_vertical_layer_height_in_meters)
+    max_vertical_layer_height_in_meters: float = (
+        args.max_vertical_layer_height_in_meters)
 
+    cmap: str = args.cmap
     alpha: float = args.alpha
 
     config = ICONModelAnimatorConfig(
@@ -130,21 +134,21 @@ def cli():
         help=f"path to blue marble PNG. (default: {default_blue_marble_path})",
         default=default_blue_marble_path)
 
-    default_begin_vertical_layer_in_meters = 0
+    default_max_vertical_layer_height_in_meters = 0
     parser.add_argument(
-        "--begin-vertical-layer-in-meters",
+        "--max-vertical-layer-height-in-meters",
         type=int,
         help="The lower bound in meters of the layer you wish to plot."
-        f" (default: {default_begin_vertical_layer_in_meters})",
-        default=default_begin_vertical_layer_in_meters)
+        f" (default: {default_max_vertical_layer_height_in_meters})",
+        default=default_max_vertical_layer_height_in_meters)
 
-    default_end_vertical_layer_in_meters = 10_000
+    default_min_vertical_layer_height_in_meters = 10_000
     parser.add_argument(
-        "--end-vertical-layer-in-meters",
+        "--min-vertical-layer-height-in-meters",
         type=int,
         help="The upper bound in meters of the layer you wish to plot."
-        f" (default: {default_end_vertical_layer_in_meters})",
-        default=default_begin_vertical_layer_in_meters)
+        f" (default: {default_min_vertical_layer_height_in_meters})",
+        default=default_max_vertical_layer_height_in_meters)
 
     parser.add_argument(
         "--save-animation", action=BooleanOptionalAction, default=False)
@@ -195,13 +199,14 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
     netcdf_height_file_path: str
     netcdf_long_name_of_height_var: str = (
         "geometric height at full level center")
-    min_height_in_meters_for_vertical_layer: float = (
+    min_vertical_layer_height_in_meters: float = (
         TROPOSPHERE_END_HEIGHT_IN_METERS)
-    max_height_in_meters_for_vertical_layer: float = (
+    max_vertical_layer_height_in_meters: float = (
         TROPOSPHERE_END_HEIGHT_IN_METERS)
 
     def __post_init__(self):
         super().__post_init__()
+        # TODO: doing too much and side effects... ugly..
         # load datasets and define variable name maps
         self._netcdf_response_var_file = Dataset(
             self.netcdf_response_var_file_path)
@@ -232,12 +237,12 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
         height_variable = netcdf_var_name_to_height_variable[
             netcdf_height_var_name]
 
-        self.height: ndarray = height_variable[:]
-        assert len(self.height.shape) == 3, \
+        height: ndarray = height_variable[:]
+        assert len(height.shape) == 3, \
             "expected dims: (height_2, lat, lon)"
-        assert self.height.shape[0] == expected_height_2_dim
-        assert self.height.shape[1] == expected_lat_dim
-        assert self.height.shape[2] == expected_lon_dim
+        assert height.shape[0] == expected_height_2_dim
+        assert height.shape[1] == expected_lat_dim
+        assert height.shape[2] == expected_lon_dim
 
         #
         # load output variable data
@@ -269,20 +274,36 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
 
         # TODO: use the upper and lower bounds of height to average what
         # to convert the 4th order tensor to 3rd order tensor for plotting
-        pass
+        lat_axis = 1
+        lon_axis = 2
+        height_mean = height.mean(axis=(lat_axis, lon_axis))
 
-        # TODO: load blue marble... should probably do this in animator?
+        min_vertical_layer_height_abs_diff_height_mean = self._absdiff(
+            height_mean, self.min_vertical_layer_height_in_meters)
+        min_vertical_layer_height_in_meters_ix = (
+            min_vertical_layer_height_abs_diff_height_mean.argmin())
+
+        max_vertical_layer_height_abs_diff_height_mean = self._absdiff(
+            height_mean, self.max_vertical_layer_height_in_meters)
+        max_vertical_layer_height_in_meters_ix = (
+            max_vertical_layer_height_abs_diff_height_mean.argmin())
+
+        # for plotting blue marble in animator (note: move elserwhere??)
         self.blue_marble_img = imread(self.blue_marble_path)
 
         return
 
-    def _get_netcdf_long_name_to_netcdf_var_name(
-            self, dataset: Dataset) -> Dict:
+    @staticmethod
+    def _get_netcdf_long_name_to_netcdf_var_name(dataset: Dataset) -> Dict:
         variables = dataset.variables
         netcdf_long_name_to_netcdf_var_name = {
             getattr(variables[var], 'long_name', var): var
             for var in variables.keys()}
         return netcdf_long_name_to_netcdf_var_name
+
+    @staticmethod
+    def _absdiff(mask_arr1, mask_arr2):
+        return (mask_arr1 - mask_arr2).__abs__()
 
     def __del__(self):
         self._netcdf_response_var_file.close()
