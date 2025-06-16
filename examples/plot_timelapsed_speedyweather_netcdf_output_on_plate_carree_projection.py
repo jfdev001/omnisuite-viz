@@ -25,7 +25,7 @@ def main():
     save_animation: bool = args.save_animation
     output_dir: str = args.output_dir
     netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
-    netcdf_long_name_of_var_to_plot: str = args.netcdf_long_name_of_var_to_plot
+    netcdf_long_name_of_response_var: str = args.netcdf_long_name_of_response_var
     blue_marble_path: str = args.blue_marble_path
     vertical_layer: int = args.vertical_layer
 
@@ -35,7 +35,7 @@ def main():
         save_animation=save_animation,
         output_dir=output_dir,
         netcdf_response_var_file_path=netcdf_response_var_file_path,
-        netcdf_long_name_of_var_to_plot=netcdf_long_name_of_var_to_plot,
+        netcdf_long_name_of_response_var=netcdf_long_name_of_response_var,
         plot_width_in_pixels=plot_width_in_pixels,
         plot_height_in_pixels=plot_height_in_pixels,
         coastlines_kwargs={"lw": 0.0},
@@ -195,7 +195,7 @@ class SpeedyWeatherAnimatorConfig(NetcdfAnimatorConfig):
             for var in self.ncfile.variables.keys()}
 
         self.netcdf_output_var_name = netcdf_long_name_to_netcdf_var_name[
-            self.netcdf_long_name_of_var_to_plot]
+            self.netcdf_long_name_of_response_var]
 
         self.blue_marble_img = imread(self.blue_marble_path)
         return
