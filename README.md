@@ -10,3 +10,4 @@ TODO:
 * Adds docs 
 * Make package for easy use by others
 * check precommit
+* docker?
