@@ -9,7 +9,7 @@ from omnisuite_examples.grid import WorldMapRectangularGrid
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of Perlin
-noise on Plate-Carree projection.
+noise on Plate-Carree projection. A trivial example with artificial data.
 """
 
 

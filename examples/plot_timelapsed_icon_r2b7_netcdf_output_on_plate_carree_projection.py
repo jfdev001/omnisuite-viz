@@ -227,6 +227,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
     def _update_frame(self, frame: int):
         response_at_time = self._grid.response[frame]
         self._mesh.set_array(response_at_time)
+
         return
 
 
