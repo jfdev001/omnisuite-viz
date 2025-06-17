@@ -236,7 +236,7 @@ class ICONConfigConsts:
     TROPOSPHERE_BEGIN_HEIGHT_IN_METERS: ClassVar[float] = 0
     TROPOSPHERE_END_HEIGHT_IN_METERS: ClassVar[float] = 10_000
 
-    EXPECTED_HEIGHT_2_DIM: ClassVar[int] = 180  # vert levels from F45 remap
+    EXPECTED_HEIGHT_2_DIM: ClassVar[int] = 180  # vertical levels in sim. grid
     EXPECTED_HEIGHT_DIM: ClassVar[int] = EXPECTED_HEIGHT_2_DIM
     EXPECTED_LAT_DIM: ClassVar[int] = 90
     EXPECTED_LON_DIM: ClassVar[int] = 180
