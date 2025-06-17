@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from argparse import ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter
+from argparse import (
+    ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
 from dataclasses import dataclass
 from matplotlib.pyplot import imread
 from netCDF4 import Dataset
 from numpy import ndarray
+from numpy.ma import MaskedArray
 from os import environ
 from os.path import abspath
 from pathlib import Path
@@ -30,7 +32,7 @@ on the Plate-Carree projection.
 
 
 def main():
-    # cli
+    # parse cli args
     args = cli()
 
     save_animation: bool = args.save_animation
@@ -71,7 +73,10 @@ def main():
         netcdf_var_transparency_on_plot=alpha,
 
         netcdf_height_file_path=netcdf_height_file_path,
-        netcdf_long_name_of_height_var=netcdf_long_name_of_height_var
+        netcdf_long_name_of_height_var=netcdf_long_name_of_height_var,
+
+        min_vertical_layer_height_in_meters=min_vertical_layer_height_in_meters,
+        max_vertical_layer_height_in_meters=max_vertical_layer_height_in_meters
     )
 
     # grid = ICONModelGrid(latitude=config.latitude, longitude=config.longitude)
@@ -192,21 +197,43 @@ class ICONModelGrid(WorldMapNetcdfGrid):
 
 
 @dataclass(kw_only=True)
-class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
+class ICONConfigConsts:
     TROPOSPHERE_BEGIN_HEIGHT_IN_METERS: ClassVar[float] = 0
     TROPOSPHERE_END_HEIGHT_IN_METERS: ClassVar[float] = 10_000
+
+    EXPECTED_HEIGHT_2_DIM: ClassVar[int] = 180  # vert levels from F45 remap
+    EXPECTED_HEIGHT_DIM: ClassVar[int] = EXPECTED_HEIGHT_2_DIM
+    EXPECTED_LAT_DIM: ClassVar[int] = 90
+    EXPECTED_LON_DIM: ClassVar[int] = 180
+    EXPECTED_TIME_DIM: ClassVar[int] = 12  # months in a year
+
+    N_HEIGHT_AXES: ClassVar[int] = 3
+    HEIGHT_HEIGHT_AXIS: ClassVar[int] = 0
+    HEIGHT_LAT_AXIS: ClassVar[int] = 1
+    HEIGHT_LON_AXIS: ClassVar[int] = 2
+
+    N_RESPONSE_AXES: ClassVar[int] = 4
+    RESPONSE_TIME_AXIS: ClassVar[int] = 0
+    RESPONSE_HEIGHT_AXIS: ClassVar[int] = 1
+    RESPONSE_LAT_AXIS: ClassVar[int] = 2
+    RESPONSE_LON_AXIS: ClassVar[int] = 3
+
+
+@dataclass(kw_only=True)
+class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
 
     netcdf_height_file_path: str
     netcdf_long_name_of_height_var: str = (
         "geometric height at full level center")
     min_vertical_layer_height_in_meters: float = (
-        TROPOSPHERE_END_HEIGHT_IN_METERS)
+        ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)
     max_vertical_layer_height_in_meters: float = (
-        TROPOSPHERE_END_HEIGHT_IN_METERS)
+        ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)
 
     def __post_init__(self):
+        # TODO: doing too much and side effects...
+
         super().__post_init__()
-        # TODO: doing too much and side effects... ugly..
         # load datasets and define variable name maps
         self._netcdf_response_var_file = Dataset(
             self.netcdf_response_var_file_path)
@@ -224,71 +251,82 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
             self._get_netcdf_long_name_to_netcdf_var_name(
                 self._netcdf_height_file))
 
-        # define expected dimensions
-        expected_height_2_dim = 180  # vertical levels from n45 remap
-        expected_height_dim = expected_height_2_dim
-        expected_lat_dim = 90
-        expected_lon_dim = 180
-        expected_time_dim = 12  # months
-
         # load height variable
         netcdf_height_var_name = netcdf_long_name_to_netcdf_height_var_name[
             self.netcdf_long_name_of_height_var]
         height_variable = netcdf_var_name_to_height_variable[
             netcdf_height_var_name]
-
         height: ndarray = height_variable[:]
-        assert len(height.shape) == 3, \
-            "expected dims: (height_2, lat, lon)"
-        assert height.shape[0] == expected_height_2_dim
-        assert height.shape[1] == expected_lat_dim
-        assert height.shape[2] == expected_lon_dim
 
-        #
+        assert len(height.shape) == ICONConfigConsts.N_HEIGHT_AXES, (
+            "expected dims: (height_2, lat, lon)")
+        assert (height.shape[ICONConfigConsts.HEIGHT_HEIGHT_AXIS]
+                == ICONConfigConsts.EXPECTED_HEIGHT_2_DIM)
+        assert (height.shape[ICONConfigConsts.HEIGHT_LAT_AXIS]
+                == ICONConfigConsts.EXPECTED_LAT_DIM)
+        assert (height.shape[ICONConfigConsts.HEIGHT_LON_AXIS]
+                == ICONConfigConsts.EXPECTED_LON_DIM)
+
         # load output variable data
-        #
         netcdf_response_var_name = (
             netcdf_long_name_to_netcdf_response_var_name[
                 self.netcdf_long_name_of_response_var])
         response_variable = netcdf_var_name_to_response_variable[
             netcdf_response_var_name]
-        self.response: ndarray = response_variable[:]
-        assert len(self.response.shape) == 4, (
+        response: ndarray = response_variable[:]
+
+        assert len(response.shape) == ICONConfigConsts.N_RESPONSE_AXES, (
             "expected dims: (time, height, lat, lon)")
-        assert self.response.shape[0] == expected_time_dim
-        assert self.response.shape[1] == expected_height_dim
-        assert self.response.shape[2] == expected_lat_dim
-        assert self.response.shape[3] == expected_lon_dim
+        assert (response.shape[ICONConfigConsts.RESPONSE_TIME_AXIS] ==
+                ICONConfigConsts.EXPECTED_TIME_DIM)
+        assert (response.shape[ICONConfigConsts.RESPONSE_HEIGHT_AXIS] ==
+                ICONConfigConsts.EXPECTED_HEIGHT_DIM)
+        assert (response.shape[ICONConfigConsts.RESPONSE_LAT_AXIS] ==
+                ICONConfigConsts.EXPECTED_LAT_DIM)
+        assert (response.shape[ICONConfigConsts.RESPONSE_LON_AXIS] ==
+                ICONConfigConsts.EXPECTED_LON_DIM)
 
         self.latitude: ndarray = netcdf_var_name_to_response_variable[
             self.LATITUDE_NETCDF_VAR_NAME][:]
         assert (
             len(self.latitude.shape) == 1
-            and self.latitude.shape[0] == expected_lat_dim)
+            and self.latitude.shape[0] == ICONConfigConsts.EXPECTED_LAT_DIM)
 
         self.longitude: ndarray = netcdf_var_name_to_response_variable[
             self.LONGITUDE_NETCDF_VAR_NAME][:]
         assert (
             len(self.longitude.shape) == 1
-            and self.longitude.shape[0] == expected_lon_dim)
+            and self.longitude.shape[0] == ICONConfigConsts.EXPECTED_LON_DIM)
 
-        # TODO: use the upper and lower bounds of height to average what
-        # to convert the 4th order tensor to 3rd order tensor for plotting
-        lat_axis = 1
-        lon_axis = 2
-        height_mean = height.mean(axis=(lat_axis, lon_axis))
+        # Use the upper and lower bounds of height to average response var...
+        # thus converting 4th order tensor to 3rd order tensor for plotting..
+        # this requires determining the index of the upper and lower bounds!
+        height_mean = height.mean(
+            axis=(
+                ICONConfigConsts.HEIGHT_LAT_AXIS,
+                ICONConfigConsts.HEIGHT_LON_AXIS))
+        assert self._is_monotonically_decreasing(height_mean)
 
-        min_vertical_layer_height_abs_diff_height_mean = self._absdiff(
-            height_mean, self.min_vertical_layer_height_in_meters)
+        min_vertical_layer_height_abs_diff_height_mean = (
+            self._absolute_difference(
+                height_mean, self.min_vertical_layer_height_in_meters))
         min_vertical_layer_height_in_meters_ix = (
             min_vertical_layer_height_abs_diff_height_mean.argmin())
 
-        max_vertical_layer_height_abs_diff_height_mean = self._absdiff(
-            height_mean, self.max_vertical_layer_height_in_meters)
+        max_vertical_layer_height_abs_diff_height_mean = (
+            self._absolute_difference(
+                height_mean, self.max_vertical_layer_height_in_meters))
         max_vertical_layer_height_in_meters_ix = (
             max_vertical_layer_height_abs_diff_height_mean.argmin())
 
-        # for plotting blue marble in animator (note: move elserwhere??)
+        layer_slice = slice(
+            min_vertical_layer_height_in_meters_ix,
+            max_vertical_layer_height_in_meters_ix+1)
+        response = response[:, layer_slice, :, :]
+        self.response_mean_in_atmospheric_layer: ndarray = response.mean(
+            axis=ICONConfigConsts.RESPONSE_HEIGHT_AXIS)
+
+        # for plotting blue marble in animator (note: move elsewhere??)
         self.blue_marble_img = imread(self.blue_marble_path)
 
         return
@@ -302,7 +340,13 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
         return netcdf_long_name_to_netcdf_var_name
 
     @staticmethod
-    def _absdiff(mask_arr1, mask_arr2):
+    def _is_monotonically_decreasing(arr: ndarray):
+        assert len(arr.shape) == 1
+        n = arr.shape[0]
+        return ((arr[0:n-1] - arr[1:n]) > 0).all()
+
+    @staticmethod
+    def _absolute_difference(mask_arr1: MaskedArray, mask_arr2: MaskedArray):
         return (mask_arr1 - mask_arr2).__abs__()
 
     def __del__(self):
