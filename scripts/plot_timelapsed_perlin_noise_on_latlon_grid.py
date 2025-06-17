@@ -1,6 +1,6 @@
 from omnisuite_examples.animator import PerlinNoiseAnimator
 from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
-from omnisuite_examples.grid import WorldMapGrid
+from omnisuite_examples.grid import WorldMapRectangularGrid
 import os
 from argparse import ArgumentParser, BooleanOptionalAction
 
@@ -25,7 +25,7 @@ def main():
     num_frames_in_animation: int = args.num_frames_in_animation
 
     # perform animation
-    grid = WorldMapGrid()
+    grid = WorldMapRectangularGrid()
 
     config = OmniSuiteAnimatorConfig(  # TODO: could read from yml/json
         save_animation=save_animation,

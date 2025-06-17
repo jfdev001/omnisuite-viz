@@ -9,7 +9,7 @@ from PIL import Image
 from typing import List
 from tqdm import tqdm
 
-from omnisuite_examples.grid import Grid, WorldMapGrid
+from omnisuite_examples.grid import Grid, LatLonGrid
 from omnisuite_examples.animator_config import (
     AnimatorConfig, OmniSuiteAnimatorConfig)
 
@@ -72,11 +72,9 @@ class OmniSuiteWorldMapAnimator(Animator):
         rectangle_for_full_plot_on_omniglobe = [0, 0, 1, 1]
         return rectangle_for_full_plot_on_omniglobe
 
-    def __init__(
-            self, grid: WorldMapGrid, config: OmniSuiteAnimatorConfig):
+    def __init__(self, grid: LatLonGrid, config: OmniSuiteAnimatorConfig):
         self._grid = grid
         self._config = config
-
         return
 
     def _configure_initial_frame(self):
