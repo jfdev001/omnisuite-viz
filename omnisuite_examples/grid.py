@@ -29,6 +29,11 @@ class LatLonGrid(Grid2D):
         raise NotImplementedError
 
     @property
+    @abstractmethod
+    def response(self) -> ndarray:
+        raise NotImplementedError
+
+    @property
     def mesh(self) -> Tuple[ndarray, ndarray]:
         return self.latitude, self.longitude
 
@@ -82,9 +87,32 @@ class WorldMapRectangularGrid(LatLonGrid):
     def latitude(self) -> ndarray:
         return self._latitude
 
+    @property
+    def response(self):
+        """this is really just a placeholder since it's unused in the example"""
+        pass
+
 
 class WorldMapNetcdfGrid(LatLonGrid):
-    def __init__(self, latitude: ndarray, longitude: ndarray):
+    """Generic world map grid where fields come (expected) from netcdf.
+
+    TODO: A bit misleading to name 'Netcdf' here since the class itself
+    is actually agnostic of the data source.
+    """
+    def __init__(self, response, latitude: ndarray, longitude: ndarray):
         self._latitude = latitude
         self._longitude = longitude
+        self._response = response
         return
+
+    @property
+    def latitude(self) -> ndarray:
+        return self._latitude
+
+    @property
+    def longitude(self) -> ndarray:
+        return self._longitude
+
+    @property
+    def response(self) -> ndarray:
+        return self._response

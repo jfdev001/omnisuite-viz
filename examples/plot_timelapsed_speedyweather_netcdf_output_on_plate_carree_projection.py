@@ -159,7 +159,7 @@ class SpeedyWeatherAnimator(OmniSuiteWorldMapAnimator):
             zorder=1,)
 
         self._mesh = self._ax.pcolormesh(
-            self._lon,  # TODO: ordering here??
+            self._lon,
             self._lat,
             self._time_to_lat_to_lon_to_var_output_at_layer[0],
             zorder=2,  # must have for data plotted "on top of" blue marble

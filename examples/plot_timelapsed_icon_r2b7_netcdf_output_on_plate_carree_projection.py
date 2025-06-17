@@ -62,6 +62,8 @@ def main():
         save_animation=save_animation,
         output_dir=output_dir,
 
+        coastlines_kwargs={"lw": 0.0},
+
         plot_height_in_pixels=plot_height_in_pixels,
         plot_width_in_pixels=plot_width_in_pixels,
 
@@ -79,10 +81,16 @@ def main():
         max_vertical_layer_height_in_meters=max_vertical_layer_height_in_meters
     )
 
-    # grid = ICONModelGrid(latitude=config.latitude, longitude=config.longitude)
+    response = config.response_mean_in_atmospheric_layer
+    latitude = config.latitude
+    longitude = config.longitude
+    grid = WorldMapNetcdfGrid(
+        response=response,
+        latitude=latitude,
+        longitude=longitude)
 
-    # animator = ICONModelAnimator(grid=grid, config=config)
-    # animator.animate()
+    animator = ICONModelAnimator(grid=grid, config=config)
+    animator.animate()
 
     return
 
@@ -142,7 +150,7 @@ def cli():
     default_max_vertical_layer_height_in_meters = 0
     parser.add_argument(
         "--max-vertical-layer-height-in-meters",
-        type=int,
+        type=float,
         help="The lower bound in meters of the layer you wish to plot."
         f" (default: {default_max_vertical_layer_height_in_meters})",
         default=default_max_vertical_layer_height_in_meters)
@@ -150,7 +158,7 @@ def cli():
     default_min_vertical_layer_height_in_meters = 10_000
     parser.add_argument(
         "--min-vertical-layer-height-in-meters",
-        type=int,
+        type=float,
         help="The upper bound in meters of the layer you wish to plot."
         f" (default: {default_min_vertical_layer_height_in_meters})",
         default=default_max_vertical_layer_height_in_meters)
@@ -190,9 +198,36 @@ def cli():
     return args
 
 
-class ICONModelGrid(WorldMapNetcdfGrid):
+class ICONModelAnimator(OmniSuiteWorldMapAnimator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._grid: WorldMapNetcdfGrid
+        self._config: ICONModelAnimatorConfig
+        return
+
+    def _plot_initial_frame(self):
+        self._ax.imshow(
+            self._config.blue_marble_img,
+            extent=self._config.blue_marble_extent,
+            transform=self._config.transform,
+            zorder=1,)
+
+        t0 = 0
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            self._grid.response[t0],
+            zorder=2,  # must have for data plotted "on top of" blue marble
+            antialiased=True,
+            transform=self._config.transform,
+            alpha=self._config.netcdf_var_transparency_on_plot,
+            cmap=self._config.netcdf_var_cmap_on_plot)
+
+        return
+
+    def _update_frame(self, frame: int):
+        response_at_time = self._grid.response[frame]
+        self._mesh.set_array(response_at_time)
         return
 
 
@@ -237,19 +272,23 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
         # load datasets and define variable name maps
         self._netcdf_response_var_file = Dataset(
             self.netcdf_response_var_file_path)
-        self._netcdf_height_file = Dataset(self.netcdf_height_file_path)
-
         netcdf_var_name_to_response_variable = (
             self._netcdf_response_var_file.variables)
-        netcdf_var_name_to_height_variable = self._netcdf_height_file.variables
-
         netcdf_long_name_to_netcdf_response_var_name = (
             self._get_netcdf_long_name_to_netcdf_var_name(
                 self._netcdf_response_var_file))
 
+        self._netcdf_height_file = Dataset(self.netcdf_height_file_path)
+        netcdf_var_name_to_height_variable = self._netcdf_height_file.variables
         netcdf_long_name_to_netcdf_height_var_name = (
             self._get_netcdf_long_name_to_netcdf_var_name(
                 self._netcdf_height_file))
+
+        # load time variable and set number of frames in animation
+        time = self._netcdf_response_var_file.variables[
+            self.TIME_NETCDF_VAR_NAME]
+        n_times = time.shape[0]
+        self.num_frames_in_animation = n_times
 
         # load height variable
         netcdf_height_var_name = netcdf_long_name_to_netcdf_height_var_name[
@@ -307,6 +346,20 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
                 ICONConfigConsts.HEIGHT_LON_AXIS))
         assert self._is_monotonically_decreasing(height_mean)
 
+        assert (
+            self.min_vertical_layer_height_in_meters
+            <= self.max_vertical_layer_height_in_meters), (
+            "`min_vertical_layer_height_in_meters` must be less than or equal"
+            " `max_vertical_layer_height_in_meters`. E.g., if you desire"
+            " an average of a reponse variable in the troposphere, you would"
+            " provide 0 and 10_000 meters, respectively. Providing a lower"
+            " bound for a layer of interest that is greater than the upper"
+            " bound is non-physical."
+            " (e.g., `max_vertical_layer_height_in_meters ="
+            f" {self.max_vertical_layer_height_in_meters}` and"
+            " `min_vertical_layer_height_in_meters = "
+            f" {self.min_vertical_layer_height_in_meters}` is non-physical.")
+
         min_vertical_layer_height_abs_diff_height_mean = (
             self._absolute_difference(
                 height_mean, self.min_vertical_layer_height_in_meters))
@@ -320,8 +373,8 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
             max_vertical_layer_height_abs_diff_height_mean.argmin())
 
         layer_slice = slice(
-            min_vertical_layer_height_in_meters_ix,
-            max_vertical_layer_height_in_meters_ix+1)
+            max_vertical_layer_height_in_meters_ix,
+            min_vertical_layer_height_in_meters_ix+1)
         response = response[:, layer_slice, :, :]
         self.response_mean_in_atmospheric_layer: ndarray = response.mean(
             axis=ICONConfigConsts.RESPONSE_HEIGHT_AXIS)
@@ -353,18 +406,6 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
         self._netcdf_response_var_file.close()
         self._netcdf_height_file.close()
         return
-
-
-class ICONModelAnimator(OmniSuiteWorldMapAnimator):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        return
-
-    def _plot_initial_frame(self):
-        raise
-
-    def _update_frame(self, frame: int):
-        raise
 
 
 if __name__ == "__main__":
