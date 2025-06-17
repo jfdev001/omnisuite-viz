@@ -20,14 +20,13 @@ DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of
 netcdf outputs from an ICON simulation on Plate-Carree projection.
 
-Since ICON height files specify the altitude of a simulation output
-typically with 180 sampling points, the user specifies the lower and
-upper bounds of the altitude they wish to plot and an average on the response
-variable of interest over this vertical region is taken. As an example,
-consider the troposphere exists roughly between altitudes of 0 and 10_000
-meters. Providing these as lower and upper bounds will mean that an average
-of a response variable (e.g., zonal wind) will be taken and then plotted
-on the Plate-Carree projection.
+Since ICON height files specify the altitude of a simulation output, 
+the user specifies the lower and upper bounds for the altitude (height)
+and an average of the response variable of interest over this vertical 
+region is taken. As an example, consider the troposphere exists roughly between 
+altitudes of 0 and 10_000 meters. Providing these as lower and upper bounds 
+will mean that an average of a response variable (e.g., zonal wind) will be 
+taken and then plotted on the Plate-Carree projection.
 """
 
 
