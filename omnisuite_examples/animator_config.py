@@ -1,3 +1,4 @@
+"""Configuration for plots used in animation."""
 from cartopy.crs import Projection, PlateCarree
 from dataclasses import dataclass, field
 from matplotlib.pyplot import rcParams, imread
