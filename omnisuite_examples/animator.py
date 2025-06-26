@@ -1,10 +1,8 @@
+"""Classes for writing/animating frames that can be imported into OmniSuite."""
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
-from noise import pnoise3
-from numpy import zeros_like
 from os import listdir
 from os.path import join
-import pdb
 from PIL import Image
 from typing import List
 from tqdm import tqdm

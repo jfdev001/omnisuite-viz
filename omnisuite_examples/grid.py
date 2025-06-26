@@ -1,3 +1,4 @@
+"""Classes for discrete values of grid and response variable on the grid."""
 from abc import ABC, abstractmethod
 from numpy import linspace, meshgrid, ndarray
 from typing import Tuple
