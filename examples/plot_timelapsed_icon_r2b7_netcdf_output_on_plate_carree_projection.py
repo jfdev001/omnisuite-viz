@@ -188,7 +188,7 @@ def cli():
         default=default_max_vertical_layer_height_in_meters)
 
     default_min_vertical_layer_height_in_meters = (
-        ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS
+        ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)
     parser.add_argument(
         "--max-vertical-layer-height-in-meters",
         type=float,
@@ -199,35 +199,35 @@ def cli():
     parser.add_argument(
         "--save-animation", action=BooleanOptionalAction, default=False)
 
-    default_plot_width_in_pixels=2048
+    default_plot_width_in_pixels = 2048
     parser.add_argument(
         "-W", "--plot_width_in_pixels",
         type=int,
         help=f" (default: {default_plot_width_in_pixels})",
         default=default_plot_width_in_pixels)
 
-    default_plot_height_in_pixels=1024
+    default_plot_height_in_pixels = 1024
     parser.add_argument(
         "-H", "--plot_height_in_pixels",
         type=int,
         help=f" (default: {default_plot_height_in_pixels})",
         default=default_plot_height_in_pixels)
 
-    default_alpha=0.3
+    default_alpha = 0.3
     parser.add_argument(
         "--alpha",
         help=f"transparency. (default: {default_alpha})",
         type=float,
         default=default_alpha)
 
-    default_cmap="bwr"
+    default_cmap = "bwr"
     parser.add_argument(
         "--cmap",
         help=f"mpl color map string (default: {default_cmap})",
         type=str,
         default=default_cmap)
 
-    args=parser.parse_args()
+    args = parser.parse_args()
     return args
 
 
@@ -240,16 +240,38 @@ class IconDataReader(AbstractReader):
         netcdf_long_name_of_response_var: str,
         netcdf_height_file_path: str,
         blue_marble_path: str,
-        netcdf_long_name_of_height_var: str=(
+        netcdf_long_name_of_height_var: str = (
             "geometric height at full level center"),
-        min_vertical_layer_height_in_meters: float=(
+        min_vertical_layer_height_in_meters: float = (
             ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS),
-        max_vertical_layer_height_in_meters: float=(
+        max_vertical_layer_height_in_meters: float = (
             ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)):
+
+        # TODO: keep public for now
+        self.netcdf_response_var_file_path = netcdf_response_var_file_path
+        self.netcdf_long_name_of_response_var = (
+            netcdf_long_name_of_response_var)
+        self.netcdf_height_file_path = netcdf_height_file_path
+        self.blue_marble_path = blue_marble_path
+
+        self.netcdf_long_name_of_height_var = netcdf_long_name_of_height_var
+        self.min_vertical_layer_height_in_meters = (
+            min_vertical_layer_height_in_meters)
+        self.max_vertical_layer_height_in_meters = (
+            max_vertical_layer_height_in_meters)
+        return
+
+    def grid(self):
+        pass
+
+    def read(self):
+        raise NotImplementedError
+
+    def postprocess(self):
         pass
 
 
-@ dataclass(kw_only=True)
+@dataclass(kw_only=True)
 class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
     """TODO: is the netcdfanimator config necessary path wise"""
 
@@ -258,32 +280,32 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
 
         super().__post_init__()
         # load datasets and define variable name maps
-        self._netcdf_response_var_file=Dataset(
+        self._netcdf_response_var_file = Dataset(
             self.netcdf_response_var_file_path)
-        netcdf_var_name_to_response_variable=(
+        netcdf_var_name_to_response_variable = (
             self._netcdf_response_var_file.variables)
-        netcdf_long_name_to_netcdf_response_var_name=(
+        netcdf_long_name_to_netcdf_response_var_name = (
             self._get_netcdf_long_name_to_netcdf_var_name(
                 self._netcdf_response_var_file))
 
-        self._netcdf_height_file=Dataset(self.netcdf_height_file_path)
-        netcdf_var_name_to_height_variable=self._netcdf_height_file.variables
-        netcdf_long_name_to_netcdf_height_var_name=(
+        self._netcdf_height_file = Dataset(self.netcdf_height_file_path)
+        netcdf_var_name_to_height_variable = self._netcdf_height_file.variables
+        netcdf_long_name_to_netcdf_height_var_name = (
             self._get_netcdf_long_name_to_netcdf_var_name(
                 self._netcdf_height_file))
 
         # load time variable and set number of frames in animation
-        time=self._netcdf_response_var_file.variables[
+        time = self._netcdf_response_var_file.variables[
             self.TIME_NETCDF_VAR_NAME]
-        n_times=time.shape[0]
-        self.num_frames_in_animation=n_times
+        n_times = time.shape[0]
+        self.num_frames_in_animation = n_times
 
         # load height variable
-        netcdf_height_var_name=netcdf_long_name_to_netcdf_height_var_name[
+        netcdf_height_var_name = netcdf_long_name_to_netcdf_height_var_name[
             self.netcdf_long_name_of_height_var]
-        height_variable=netcdf_var_name_to_height_variable[
+        height_variable = netcdf_var_name_to_height_variable[
             netcdf_height_var_name]
-        height: ndarray=height_variable[:]
+        height: ndarray = height_variable[:]
 
         assert len(height.shape) == ICONConfigConsts.N_HEIGHT_AXES, (
             "expected dims: (height_2, lat, lon)")
@@ -295,12 +317,12 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
                 == ICONConfigConsts.EXPECTED_LON_DIM)
 
         # load output variable data
-        netcdf_response_var_name=(
+        netcdf_response_var_name = (
             netcdf_long_name_to_netcdf_response_var_name[
                 self.netcdf_long_name_of_response_var])
-        response_variable=netcdf_var_name_to_response_variable[
+        response_variable = netcdf_var_name_to_response_variable[
             netcdf_response_var_name]
-        response: ndarray=response_variable[:]
+        response: ndarray = response_variable[:]
 
         assert len(response.shape) == ICONConfigConsts.N_RESPONSE_AXES, (
             "expected dims: (time, height, lat, lon)")
@@ -313,13 +335,13 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
         assert (response.shape[ICONConfigConsts.RESPONSE_LON_AXIS] ==
                 ICONConfigConsts.EXPECTED_LON_DIM)
 
-        self.latitude: ndarray=netcdf_var_name_to_response_variable[
+        self.latitude: ndarray = netcdf_var_name_to_response_variable[
             self.LATITUDE_NETCDF_VAR_NAME][:]
         assert (
             len(self.latitude.shape) == 1
             and self.latitude.shape[0] == ICONConfigConsts.EXPECTED_LAT_DIM)
 
-        self.longitude: ndarray=netcdf_var_name_to_response_variable[
+        self.longitude: ndarray = netcdf_var_name_to_response_variable[
             self.LONGITUDE_NETCDF_VAR_NAME][:]
         assert (
             len(self.longitude.shape) == 1
@@ -328,7 +350,7 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
         # Use the upper and lower bounds of height to average response var...
         # thus converting 4th order tensor to 3rd order tensor for plotting..
         # this requires determining the index of the upper and lower bounds!
-        height_mean=height.mean(
+        height_mean = height.mean(
             axis=(
                 ICONConfigConsts.HEIGHT_LAT_AXIS,
                 ICONConfigConsts.HEIGHT_LON_AXIS))
@@ -348,46 +370,46 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
             " `min_vertical_layer_height_in_meters = "
             f" {self.min_vertical_layer_height_in_meters}` is non-physical.")
 
-        min_vertical_layer_height_abs_diff_height_mean=(
+        min_vertical_layer_height_abs_diff_height_mean = (
             self._absolute_difference(
                 height_mean, self.min_vertical_layer_height_in_meters))
-        min_vertical_layer_height_in_meters_ix=(
+        min_vertical_layer_height_in_meters_ix = (
             min_vertical_layer_height_abs_diff_height_mean.argmin())
 
-        max_vertical_layer_height_abs_diff_height_mean=(
+        max_vertical_layer_height_abs_diff_height_mean = (
             self._absolute_difference(
                 height_mean, self.max_vertical_layer_height_in_meters))
-        max_vertical_layer_height_in_meters_ix=(
+        max_vertical_layer_height_in_meters_ix = (
             max_vertical_layer_height_abs_diff_height_mean.argmin())
 
         # TODO: verify this slicing... since ordering is weird here...
-        layer_slice=slice(
+        layer_slice = slice(
             min_vertical_layer_height_in_meters_ix,
             max_vertical_layer_height_in_meters_ix+1)
-        response=response[:, layer_slice, :, :]
-        self.response_mean_in_atmospheric_layer: ndarray=response.mean(
+        response = response[:, layer_slice, :, :]
+        self.response_mean_in_atmospheric_layer: ndarray = response.mean(
             axis=ICONConfigConsts.RESPONSE_HEIGHT_AXIS)
 
         # for plotting blue marble in animator (note: move elsewhere??)
-        self.blue_marble_img=imread(self.blue_marble_path)
+        self.blue_marble_img = imread(self.blue_marble_path)
 
         return
 
-    @ staticmethod
+    @staticmethod
     def _get_netcdf_long_name_to_netcdf_var_name(dataset: Dataset) -> Dict:
-        variables=dataset.variables
-        netcdf_long_name_to_netcdf_var_name={
+        variables = dataset.variables
+        netcdf_long_name_to_netcdf_var_name = {
             getattr(variables[var], 'long_name', var): var
             for var in variables.keys()}
         return netcdf_long_name_to_netcdf_var_name
 
-    @ staticmethod
+    @staticmethod
     def _is_monotonically_decreasing(arr: ndarray):
         assert len(arr.shape) == 1
-        n=arr.shape[0]
+        n = arr.shape[0]
         return ((arr[0:n-1] - arr[1:n]) > 0).all()
 
-    @ staticmethod
+    @staticmethod
     def _absolute_difference(mask_arr1: MaskedArray, mask_arr2: MaskedArray):
         return (mask_arr1 - mask_arr2).__abs__()
 
@@ -411,8 +433,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             transform=self._config.transform,
             zorder=1,)
 
-        t0=0
-        self._mesh=self._ax.pcolormesh(
+        t0 = 0
+        self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
             self._grid.latitude,
             self._grid.response[t0],
@@ -425,7 +447,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         return
 
     def _update_frame(self, frame: int):
-        response_at_time=self._grid.response[frame]
+        response_at_time = self._grid.response[frame]
         self._mesh.set_array(response_at_time)
 
         return
