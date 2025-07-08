@@ -17,7 +17,7 @@ from omnisuite_examples.animator_config import NetcdfAnimatorConfig
 from omnisuite_examples.grid import WorldMapNetcdfGrid
 from omnisuite_examples.reader import AbstractReader
 
-DESCRIPTION = """
+DESCRIPTION = f"""
 Save animation frames (and optionally combine the frames to a gif) of
 netcdf outputs from an ICON simulation on Plate-Carree projection.
 
@@ -28,6 +28,17 @@ region is taken. As an example, consider the troposphere exists roughly between
 altitudes of 0 and 10_000 meters. Providing these as lower and upper bounds
 will mean that an average of a response variable (e.g., zonal wind) will be
 taken and then plotted on the Plate-Carree projection.
+
+You will need to make sure the R2B7 data is available for this script.
+by default, the script looks in 
+`data/R2B7_free_30_years/R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc`,
+so you should make sure to put your R2B7 data in that directory.
+
+You will also need the [blue marble image](https://neo.gsfc.nasa.gov/servlet/RenderData?si=526300&cs=rgb&format=PNG&width=3600&height=1800) since this is  used as the 
+"background" for your temperature, wind, etc. data on the globe. By default,
+the script looks for this image under the path
+"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png", so
+you should download the image from NASA and save it there.
 """
 
 

@@ -34,4 +34,12 @@ The workflow (under development) currently involves the following steps:
   and in particular you should override the `_plot_initial_frame` and 
   `_update_frame` methods.
 * Combine these appropriately and then call the `animate` method of `Animator`.
- See `examples/plot_timelapsed_icon_r2b7_netcdf_output_on_plate_carree_projection.py`
+  See `examples/plot_timelapsed_icon_r2b7_netcdf_output_on_plate_carree_projection.py`.
+  
+
+You can call 
+
+```python
+python examples/plot_timelapsed_icon_r2b7_netcdf_output_on_plate_carree_projection.py -h 
+```
+to get the help doc for that example.
