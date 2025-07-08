@@ -116,13 +116,54 @@ and these are the values that are often of interest to climatologists.
 These operations are why the time dimension is 12 in the files matching the 
 pattern `R2B7*`.
 
-In general, you can either inspect netCDF files using command line tools
-like [netCDF-4 64-bit (bWindows exe)](https://downloads.unidata.ucar.edu/netcdf/)
+# Inspecting NetCDF Data
+
+In general, you can either inspect NetCDF files using command line tools
+like [netCDF-4 64-bit (Windows exe)](https://downloads.unidata.ucar.edu/netcdf/)
 (see also [netCDF-4 windows installation instructions](https://pjbartlein.github.io/REarthSysSci/install_netCDF.html)
 or the Python interface `netCDF4`.
 
+If you use `ncdump`, then you can call
+
+```shell
+ncdump -h PATH_TO_FILE_HERE
+```
+to get an overview of the variables (see also [`ncdump -h` documentation](https://www.unidata.ucar.edu/software/netcdf/workshops/2009/utilities/NcdumpHeader.html).
+
+You could inspect the NetCDF data with Python
+
+```shell
+# In a conda environment, make sure you have already called 
+# conda install netCDF4 
+# if that doesn't work try conda install conda-forge::netcdf4
+python
+>>> from netCDF4 import Dataset
+>>> zonal_wind_dataset = Dataset("R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc")
+>>> zonal_wind_dataset.variables
+>>> latitude_array = zonal_wind_dataset.variables['lat'][:]
+>>> longitude_array = zonal_wind_dataset.variables['lon'][:]
+>>> zonal_wind_array = zonal_wind_dataset.variables['u'][:]
+>>> # Try looking at the dimensions of these variables, are they what you expect?
+>>> # Do they match the `ncdump -h` output?
+>>> latitude_array.shape
+>>> longitude_array.shape
+>>> zonal_wind_array.shape
+```
+You can find the Python netCDF4 documentation [here](https://unidata.github.io/netcdf4-python/).
+
+Once you have a reasonable understandable of netCDF4 datasets, you can take
+a look at what making some simple plots using this data looks like.
 For a simple example of what plotting the zonal wind data (i.e.,
 the file `R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc`) looks like, 
 you can look at the code in 
 [icon-visualization-examples/scripts/basic_monthly_zonal_wind_contour.py](https://github.com/jfdev001/icon-visualization-examples/blob/main/scripts/basic_monthly_zonal_wind_contour.py). Follow the installation instructions at 
 [icon-visualization-examples/README.md](https://github.com/jfdev001/icon-visualization-examples/tree/main).
+
+With a grasp of some basic plotting functionality in Python, you can then
+think about how to create some animations for OmniGlobe. An example that 
+generates 12 frames (one for each month) using the zonal wind data is 
+available at [omnisuite_examples/examples/plot_timelapsed_icon_r2b7_netcdf_output_on_plate_carree_projection.py](https://github.com/jfdev001/omnisuite-examples/blob/main/examples/plot_timelapsed_icon_r2b7_netcdf_output_on_plate_carree_projection.py).
+
+Can you generate some animations using the temperature data instead? Can you
+upload one of these frames (or all or a subset of them) into the OmniSuite
+material editor?  
