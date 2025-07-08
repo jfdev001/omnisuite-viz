@@ -175,7 +175,16 @@ You can clone git repositories on github using the below command:
 ```shell
 git clone https://some_url_here.git
 ```
+
 Note, you should use a URL and not something that begins with `git@github.com`.
+
+
+You can install the necessary packages for a repository by either using
+`pip` and a `.venv` OR you can just use `conda`. To use `conda`, do the following:
+
+```shell
+conda install --yes --file requirements.txt
+```
 
 You can interactively inspect what's going on in a Python file by using the
 Python debugger:
