@@ -4,9 +4,8 @@ from matplotlib.pyplot import imread
 from netCDF4 import Dataset
 from numpy import ndarray
 from os import environ
-from os.path import exists, abspath
+from os.path import abspath
 from pathlib import Path
-from typing import ClassVar
 
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
 from omnisuite_examples.animator_config import NetcdfAnimatorConfig
@@ -25,9 +24,12 @@ def main():
     save_animation: bool = args.save_animation
     output_dir: str = args.output_dir
     netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
-    netcdf_long_name_of_response_var: str = args.netcdf_long_name_of_response_var
+    netcdf_long_name_of_response_var: str = (
+        args.netcdf_long_name_of_response_var)
     blue_marble_path: str = args.blue_marble_path
     vertical_layer: int = args.vertical_layer
+
+    raise NotImplementedError("deprecated until updated for Reader")
 
     grid = WorldMapRectangularGrid()
 
