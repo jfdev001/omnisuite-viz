@@ -36,10 +36,10 @@ from above, so we see only the top of our "boxes"---with dimensions as below
 ```
 These "boxes" are not just dividing Germany, however, they are dividing the
 entire world as ICON is a global model. This means quantities like temperature,
-wind, etc can predicted in essentially whatever location on Earth you want
-Remember though, you are still restricted by the fact the resolution is roughly 
-20 km, so ICON cannot tell you explicitly what the temperature in a 1 meter by 
-1 meter volume above your flat is, for example.
+wind, etc can be predicted in essentially whatever location on Earth you want.
+Remember, though, you are still restricted by the fact the resolution is roughly 
+20 km, so ICON cannot tell you explicitly what the temperature in a 1 m^3 volume 
+above your flat is, for example.
 
 The files `R2B7_free_30_years_temp-atm_3d_ML_ymonmean_2019-2029_RM.nc`
 and `R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc` are the ICON
