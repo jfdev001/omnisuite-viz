@@ -1,4 +1,4 @@
 -r requirements.txt
 
-noise # perlin noise: https://pypi.org/project/noise/, requires C++ build tools(133 MB) on windows
+noise # perlin noise: https://pypi.org/project/noise/, requires C++ build tools on windows
 ipython
