@@ -7,9 +7,9 @@ what ICON outputs is available in [Appendix A: ICON Model Tutorial 2024](https:/
 
 The ICON model discretizes the atmosphere both horizontally and vertically
 into discrete volumes. While the ICON grid is a complex icosahedral grid whose 
-resolution is defined by the `RnBk` term, the data in this directory
-correspond to data that has been remapped (this is why the files have the 
-`RM` suffix) to a simple latitude-longitude coordinate system. Practically,
+resolution is defined by the `RnBk` (in this case `R2B7`) term, the data in this 
+directory correspond to data that has been remapped (this is why the files have 
+the `RM` suffix) to a simple latitude-longitude coordinate system. Practically,
 you can think of the `RnBk` term as determining the dimensions of a small 
 "box" in the atmosphere with length in kilometers given by the 
 [formula](https://docs.icon-model.org/buildrun/buildrun_running.html#grid-files)
@@ -18,8 +18,8 @@ you can think of the `RnBk` term as determining the dimensions of a small
 delta_x = 5050 / (n * 2**k)
 ```
 In this case, the grid resolution for `R2B7` is approximately 20 kilometers. So
-you are looking at Germany from an aerial view, you would see that it is 
-divided into discrete squares---it is squares now because we are looking
+if you are looking at Germany from an aerial view, you would see that model 
+has divided it into discrete squares---it is squares now because we are looking
 from above, so we see only the top of our "boxes"---with dimensions as below
 
 ```text
@@ -34,6 +34,12 @@ from above, so we see only the top of our "boxes"---with dimensions as below
       |
     20 km
 ```
+These "boxes" are not just dividing Germany, however, they are dividing the
+entire world as ICON is a global model. This means quantities like temperature,
+wind, etc can predicted in essentially whatever location on Earth you want
+Remember though, you are still restricted by the fact the resolution is roughly 
+20 km, so ICON cannot tell you explicitly what the temperature in a 1 meter by 
+1 meter volume above your flat is, for example.
 
 The files `R2B7_free_30_years_temp-atm_3d_ML_ymonmean_2019-2029_RM.nc`
 and `R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc` are the ICON
@@ -51,28 +57,32 @@ latitude and longitude corresponds to some height in meters at which the value
 of a variable such as zonal wind `u` in 
 `R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc` is present.
 
-
 The file `R2B7_free_30_years_temp-atm_3d_ML_ymonmean_2019-2029_RM.nc` has 
 temperature data of the shape `(time, height, lat, lon)` where `time = 12`
-since the temperature data averaged over each month and then over each year
+since the temperature data was averaged over each month and then over each year
 in the 10 year period. This sort of averaging is a common operation in 
 climatological studies. To understand this operation, consider the below
-roughly constructed table where `temperature` is some value in Kelvin:
+roughly constructed table for January in particular where `temperature` is 
+some value in Kelvin:
 
 ```text
 YEAR MONTH   DAY  MODEL_VALUE
 2019 January 01   temperature
 2019 January 02   temperature
-...
+.
+.
+.
 2019 January 31   temperature
 2020 January 01   temperature
 2020 January 02   temperature
-...
+.
+.
+.
 2020 January 31   temperature
 ```
 
 The first averaging operation taken is over all days in the month for a 
-particular year. The result of this operation would be the following:
+particular year. The result of this operation would be the following table:
 
 ```text
 YEAR MONTH   AVERAGE_MODEL_VALUE_OVER_DAYS_IN_MONTH
@@ -95,7 +105,9 @@ If you do this for all months, then you end up with a result like
 MONTH    AVERAGE_MODEL_VALUE_OVER_YEARS_2019_to_2020
 January  temperature
 February temperature
-...
+.
+.
+.
 December temperature
 ```
 
