@@ -167,3 +167,37 @@ available at [omnisuite_examples/examples/plot_timelapsed_icon_r2b7_netcdf_outpu
 Can you generate some animations using the temperature data instead? Can you
 upload one of these frames (or all or a subset of them) into the OmniSuite
 material editor?  
+
+# Some Miscellaneous Notes
+
+You can clone git repositories on github using the below command:
+
+```shell
+git clone https://some_url_here.git
+```
+Note, you should use a URL and not something that begins with `git@github.com`.
+
+You can interactively inspect what's going on in a Python file by using the
+Python debugger:
+
+```shell
+python -m pdb scripts/some_script.py
+```
+
+Here is some documentation for the Python debugger as well as three-note crash
+course in its usage:
+
+Very short tutorial: https://www.freecodecamp.org/news/debugging-in-python-using-pdb/
+
+A bit of a longer tutorial: https://realpython.com/python-debugging-pdb/
+
+The actual documentation (it's denser than the tutorials of course, but still good to know about): https://docs.python.org/3/library/pdb.html
+
+You basically need to know the following:
+
+1. You can start debugging your python script with `python -m pdb my_script_name.py` and it enters the script in debug mode. You can then print variables using the `p VARIABLE_NAME` command.  You can set breakpoints in your code by calling `b LINE_NUMBER`. You can list your current break points by calling just `b`. You can list the current line and some surrounding lines at which the debugger has currently stopped by typing `l`. You can execute a single line in your code by call `n` (for next). You can "step into" a line of your code (e.g., if calling a function, the step into will move your debugger "view" into the function) by calling `s`. You can execute the script until you hit a break point by calling `c` for continue.
+
+2. You can instead just `import pdb` at the top of your script and put `pdb.set_trace()` somewhere in your code where you'd like to start debugging. Then if you call `python my_script_name.py` the debugger will automatically start when the python interpreter encounters the line containing the `pdb.set_trace()`.
+
+3. Lastly, you can enter "interactive" mode by typing `interact` while in the debug mode and then you just have a regular python interpreter and not have to worry about accidentally executing the debug commands I listed in point (1). The interactive mode is just like any other interactive mode except you have access to all variables that have been assigned thus far in the script. 
+
