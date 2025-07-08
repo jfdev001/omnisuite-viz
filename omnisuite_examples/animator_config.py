@@ -67,16 +67,10 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
 
 @dataclass(kw_only=True)
 class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
-    LATITUDE_NETCDF_VAR_NAME: ClassVar[str] = "lat"
-    LONGITUDE_NETCDF_VAR_NAME: ClassVar[str] = "lon"
-    TIME_NETCDF_VAR_NAME: ClassVar[str] = "time"
-
     netcdf_response_var_file_path: str
-
     blue_marble_path: str
-    blue_marble_extent = (-180, 180, -90, 90)  # full blue marble
 
-    netcdf_long_name_of_response_var: str
+    blue_marble_extent = (-180, 180, -90, 90)  # full blue marble
 
     netcdf_var_transparency_on_plot: float = 0.30
     netcdf_var_cmap_on_plot: str = "bwr"
