@@ -17,11 +17,11 @@ OmniSuite
 
 The workflow (under development) currently involves the following steps:
 * Define a `Reader` (you will need to subclass it) that reads your 
-  netcdf/grib data and post processes it into a `Grid2D`.
-    * The `Grid2D` (you will likely use the concrete implementation 
+  netcdf/grib data and post processes it into a `LatLonGrid`.
+    * The `LatLonGrid` (you will likely use the concrete implementation 
      `WorldMapNetcdfGrid`) has `longitude`, `latitude`, and `response` 
-      properties where the `response` is a variable like zonal wind, 
-      temperature, etc.
+      properties (aka member data) where the `response` is a variable like 
+      zonal wind, temperature, etc.
 * Define an `AnimatorConfig` (you will likely use the `NetcdfAnimatorConfig`) 
   that stores general information like the dimension
   resolution of your frames in the animation, output directory for animation, 
