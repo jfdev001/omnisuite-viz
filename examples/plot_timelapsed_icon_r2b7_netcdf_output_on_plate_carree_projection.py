@@ -13,8 +13,9 @@ from pathlib import Path
 from typing import ClassVar, Dict
 
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.grid import WorldMapNetcdfGrid
 from omnisuite_examples.animator_config import NetcdfAnimatorConfig
+from omnisuite_examples.grid import WorldMapNetcdfGrid
+from omnisuite_examples.reader import AbstractReader
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of
@@ -57,6 +58,11 @@ def main():
     cmap: str = args.cmap
     alpha: float = args.alpha
 
+    # read
+    # TODO: bunch of read/post process related arguments...
+    reader = IconDataReader()
+
+    # set up plotting configuration
     config = ICONModelAnimatorConfig(
         save_animation=save_animation,
         output_dir=output_dir,
@@ -80,6 +86,7 @@ def main():
         max_vertical_layer_height_in_meters=max_vertical_layer_height_in_meters
     )
 
+    # define the grid
     response = config.response_mean_in_atmospheric_layer
     latitude = config.latitude
     longitude = config.longitude
@@ -88,6 +95,7 @@ def main():
         latitude=latitude,
         longitude=longitude)
 
+    # write the frames to disk
     animator = ICONModelAnimator(grid=grid, config=config)
     animator.animate()
 
@@ -197,38 +205,11 @@ def cli():
     return args
 
 
-class ICONModelAnimator(OmniSuiteWorldMapAnimator):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid: WorldMapNetcdfGrid
-        self._config: ICONModelAnimatorConfig
-        return
+class IconDataReader(AbstractReader):
+    """Read and post process ICON data (e.g., R2B7 NetCDF4 data)"""
 
-    def _plot_initial_frame(self):
-        self._ax.imshow(
-            self._config.blue_marble_img,
-            extent=self._config.blue_marble_extent,
-            transform=self._config.transform,
-            zorder=1,)
-
-        t0 = 0
-        self._mesh = self._ax.pcolormesh(
-            self._grid.longitude,
-            self._grid.latitude,
-            self._grid.response[t0],
-            zorder=2,  # must have for data plotted "on top of" blue marble
-            antialiased=True,
-            transform=self._config.transform,
-            alpha=self._config.netcdf_var_transparency_on_plot,
-            cmap=self._config.netcdf_var_cmap_on_plot)
-
-        return
-
-    def _update_frame(self, frame: int):
-        response_at_time = self._grid.response[frame]
-        self._mesh.set_array(response_at_time)
-
-        return
+    def __init__(self,):
+        pass
 
 
 @dataclass(kw_only=True)
@@ -405,6 +386,40 @@ class ICONModelAnimatorConfig(NetcdfAnimatorConfig):
     def __del__(self):
         self._netcdf_response_var_file.close()
         self._netcdf_height_file.close()
+        return
+
+
+class ICONModelAnimator(OmniSuiteWorldMapAnimator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._grid: WorldMapNetcdfGrid
+        self._config: ICONModelAnimatorConfig
+        return
+
+    def _plot_initial_frame(self):
+        self._ax.imshow(
+            self._config.blue_marble_img,
+            extent=self._config.blue_marble_extent,
+            transform=self._config.transform,
+            zorder=1,)
+
+        t0 = 0
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            self._grid.response[t0],
+            zorder=2,  # must have for data plotted "on top of" blue marble
+            antialiased=True,
+            transform=self._config.transform,
+            alpha=self._config.netcdf_var_transparency_on_plot,
+            cmap=self._config.netcdf_var_cmap_on_plot)
+
+        return
+
+    def _update_frame(self, frame: int):
+        response_at_time = self._grid.response[frame]
+        self._mesh.set_array(response_at_time)
+
         return
 
 
