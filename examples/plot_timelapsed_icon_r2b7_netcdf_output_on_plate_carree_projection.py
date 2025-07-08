@@ -436,12 +436,14 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         return
 
     def _plot_initial_frame(self):
+        # Plot an actual image of the Earth
         self._ax.imshow(
             self._blue_marble_img,
             extent=self._config.blue_marble_extent,
             transform=self._config.transform,
             zorder=1,)
 
+        # Overlay the image of the Earth with your data of interest
         t0 = 0
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
@@ -456,6 +458,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         return
 
     def _update_frame(self, frame: int):
+        # Update frame with the value of the response variable at next
+        # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
         response_at_time = self._grid.response[frame]
         self._mesh.set_array(response_at_time)
         return
