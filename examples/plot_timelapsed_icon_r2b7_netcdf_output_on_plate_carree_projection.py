@@ -32,15 +32,20 @@ taken and then plotted on the Plate-Carree projection.
 
 
 def main():
-    # parse cli args
+    # -- parse cli args --
     args = cli()
 
+    # config args
     save_animation: bool = args.save_animation
     output_dir: str = args.output_dir
 
     plot_width_in_pixels: int = args.plot_width_in_pixels
     plot_height_in_pixels: int = args.plot_height_in_pixels
 
+    cmap: str = args.cmap
+    alpha: float = args.alpha
+
+    # read args
     netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
     netcdf_long_name_of_response_var: str = (
         args.netcdf_long_name_of_response_var)
@@ -55,12 +60,21 @@ def main():
     max_vertical_layer_height_in_meters: float = (
         args.max_vertical_layer_height_in_meters)
 
-    cmap: str = args.cmap
-    alpha: float = args.alpha
+    # read netcdf data, the blue marble image, and post process
+    reader = IconDataReader(
+        netcdf_response_var_file_path,
+        netcdf_long_name_of_response_var,
+        netcdf_height_file_path,
+        netcdf_long_name_of_height_var,
 
-    # read
-    # TODO: bunch of read/post process related arguments...
-    reader = IconDataReader()
+        blue_marble_path,
+
+        min_vertical_layer_height_in_meters,
+        max_vertical_layer_height_in_meters)
+
+    reader.read()
+    reader.postprocess()
+    grid = reader.grid
 
     # set up plotting configuration
     config = ICONModelAnimatorConfig(
@@ -68,23 +82,10 @@ def main():
         output_dir=output_dir,
 
         coastlines_kwargs={"lw": 0.0},
-
         plot_height_in_pixels=plot_height_in_pixels,
         plot_width_in_pixels=plot_width_in_pixels,
-
-        blue_marble_path=blue_marble_path,
-
-        netcdf_response_var_file_path=netcdf_response_var_file_path,
-        netcdf_long_name_of_response_var=netcdf_long_name_of_response_var,
         netcdf_var_cmap_on_plot=cmap,
-        netcdf_var_transparency_on_plot=alpha,
-
-        netcdf_height_file_path=netcdf_height_file_path,
-        netcdf_long_name_of_height_var=netcdf_long_name_of_height_var,
-
-        min_vertical_layer_height_in_meters=min_vertical_layer_height_in_meters,
-        max_vertical_layer_height_in_meters=max_vertical_layer_height_in_meters
-    )
+        netcdf_var_transparency_on_plot=alpha)
 
     # define the grid
     response = config.response_mean_in_atmospheric_layer

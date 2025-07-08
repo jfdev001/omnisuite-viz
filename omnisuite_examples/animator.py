@@ -16,7 +16,7 @@ from omnisuite_examples.animator_config import (
 
 class Animator(ABC):
 
-    def __init__(self, grid: Grid, config: AnimatorConfig):
+    def __init__(self, grid: Grid, config: AnimatorConfig, *args, **kwargs):
         self._grid = grid
         self._config = config
         return
@@ -32,19 +32,19 @@ class Animator(ABC):
 
     @abstractmethod
     def _configure_initial_frame():
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _plot_initial_frame(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _update_and_save_frames(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _update_frame(self, frame: int):
-        pass
+        raise NotImplementedError
 
     def _save_animation(self):
         frames = self._open_frames()
@@ -54,15 +54,15 @@ class Animator(ABC):
 
     @abstractmethod
     def _open_frames(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _save_frames_as_animation(self, frames):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _close_frames(self, frames):
-        pass
+        raise NotImplementedError
 
 
 class OmniSuiteWorldMapAnimator(Animator):
