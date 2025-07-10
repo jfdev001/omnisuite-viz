@@ -15,7 +15,7 @@ plots on a [Plate-Carree](https://en.wikipedia.org/wiki/Equirectangular_projecti
 projection of the Earth for specific use with the visualization software 
 OmniSuite
 
-The workflow (under development) currently involves the following steps:
+The tentative workflow currently involves the following steps:
 * Define a `Reader` (you will need to subclass it) that reads your 
   netcdf/grib data and post processes it into a `LatLonGrid`.
     * The `LatLonGrid` (you will likely use the concrete implementation 
