@@ -4,3 +4,6 @@ netCDF4
 numpy
 pre-commit
 tqdm
+xarray
+dask
+metpy
