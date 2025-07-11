@@ -11,11 +11,11 @@ import re
 class AnimatorConfig:
 
     save_animation: bool
-
     output_dir: str
+    num_frames_in_animation: int
+
     path_to_save_animation: str = None
 
-    num_frames_in_animation: Optional[int] = None
 
     INCH_PER_PIXEL: ClassVar[float] = 1 / rcParams['figure.dpi']
     formatted_file_name_per_frame: str = "frame_%d.png"
