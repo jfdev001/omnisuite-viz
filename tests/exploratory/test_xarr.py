@@ -8,9 +8,19 @@ class TestXarrayOps(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gravity_wave_files_glob = "data/gravity_waves/*.nc"
+        cls.gravity_wave_file = "data/gravity_waves/GWS_202603010000053.nc"
         return
 
-    def test_open_mfdataset(self):
+    def test_open_mfdataset_on_file(self):
+        gravity_wave_single_mfdatset = xarr.open_mfdataset(
+            self.gravity_wave_file)
+        shape = list(gravity_wave_single_mfdatset.sizes.values())
+        time_dim = shape[0]
+        expected_time_dim = 1
+        self.assertEqual(time_dim, expected_time_dim)
+        return
+
+    def test_open_mfdataset_on_glob(self):
         """Automatically concatenates along the time dimension!!"""
         gravity_wave_mfdataset = xarr.open_mfdataset(
             self.gravity_wave_files_glob)
