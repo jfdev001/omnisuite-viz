@@ -137,13 +137,14 @@ def cli():
         help="destination directory of saved plots")
 
     parser.add_argument(
-        "--save-animation", action=BooleanOptionalAction, default=False)
+        "--save-animation",
+        action=BooleanOptionalAction,
+        required=True)
 
     read_group = parser.add_argument_group("read")
 
-    # TODO: could be file glob or single file or mpath files as well
     default_netcdf_response_var_file_path = abspath(
-        "data/gravity_waves/*nc")
+        "data/gravity_waves/*.nc")
     read_group.add_argument(
         "--netcdf-response-var-file-path",
         default=default_netcdf_response_var_file_path,
@@ -259,6 +260,7 @@ class ICONMultifileDataReader(AbstractReader):
             netcdf_response_var_short_name)
         self.blue_marble_path = blue_marble_path
         self.use_level_ix = use_level_ix
+        self.level_ix = level_ix
 
         self.min_vertical_layer_height_in_meters = (
             min_vertical_layer_height_in_meters)
@@ -270,31 +272,49 @@ class ICONMultifileDataReader(AbstractReader):
         return
 
     def read(self):
-        # TODO
-        # load datasets and define variable name maps
+        self.mfdataset = open_mfdataset(self.netcdf_response_var_file_path)
 
-        # load output variable data
+        # TODO: this is not memory efficient because it gathers the
+        # chunked data into a single numpy array
+        self.response = (
+            self.mfdataset
+            .variables
+            .get(self.netcdf_response_var_short_name)
+            .values)
 
-        self.latitude: ndarray = netcdf_var_name_to_response_variable[
-            ICONConfigConsts.LATITUDE_NETCDF_VAR_NAME][:]
+        self.latitude = (
+            self.mfdataset
+            .variables
+            .get(ICONConfigConsts.LATITUDE_NETCDF_SHORT_VAR_NAME)
+            .values)
 
-        self.longitude: ndarray = netcdf_var_name_to_response_variable[
-            ICONConfigConsts.LONGITUDE_NETCDF_VAR_NAME][:]
+        self.longitude = (
+            self.mfdataset
+            .variables
+            .get(ICONConfigConsts.LONGITUDE_NETCDF_SHORT_VAR_NAME)
+            .values)
+
+        self.geopotential_height = (
+            self.mfdataset
+            .variables
+            .get(ICONConfigConsts.GEOPOTENTIAL_HEIGHT_NETCDF_SHORT_VAR_NAME)
+            .values)
 
         # for plotting blue marble in animator (note: move elsewhere??)
         self.blue_marble_img = imread(self.blue_marble_path)
+
         return
 
     def postprocess(self):
         if self.use_level_ix:
-            # TODO
-            pass
+            self.response = self.response[:, self.level_ix, :, :]
         else:
             # TODO: move to utils func
             # TODO: you need to use geopotential to height here
             # Use the upper and lower bounds of height to average response var...
             # thus converting 4th order tensor to 3rd order tensor for plotting..
             # this requires determining the index of the upper and lower bounds!
+            raise NotImplementedError
             height_mean = self.height.mean(
                 axis=(
                     ICONConfigConsts.HEIGHT_LAT_AXIS,
@@ -336,7 +356,7 @@ class ICONMultifileDataReader(AbstractReader):
                 min_vertical_layer_height_in_meters_ix+1)
 
             response = self.response[:, layer_slice, :, :]
-            self.response_mean_in_atmospheric_layer: ndarray = response.mean(
+            self.response: ndarray = response.mean(
                 axis=ICONConfigConsts.RESPONSE_HEIGHT_AXIS)
         return
 
@@ -350,20 +370,19 @@ class ICONMultifileDataReader(AbstractReader):
     def _absolute_difference(mask_arr1: MaskedArray, mask_arr2: MaskedArray):
         return (mask_arr1 - mask_arr2).__abs__()
 
-    def __del__(self):
-        self._netcdf_response_var_file.close()
-        self._netcdf_height_file.close()
-        return
-
     @property
     def grid(self) -> WorldMapNetcdfGrid:
         # TODO: make sense to construct grid here??
         grid = WorldMapNetcdfGrid(
-            self.response_mean_in_atmospheric_layer,
+            self.response,
             self.latitude,
             self.longitude
         )
         return grid
+
+    def __del__(self):
+        self.mfdataset.close()
+        return
 
 
 class ICONModelAnimator(OmniSuiteWorldMapAnimator):
