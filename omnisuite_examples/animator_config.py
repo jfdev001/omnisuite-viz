@@ -1,21 +1,24 @@
+"""Configuration for plots used in animation."""
 from cartopy.crs import Projection, PlateCarree
 from dataclasses import dataclass, field
-from matplotlib.pyplot import rcParams
+from matplotlib.pyplot import rcParams, imread
 from os.path import exists, join
 from typing import ClassVar, Tuple, Optional
+import re
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AnimatorConfig:
 
     save_animation: bool
+    output_dir: str
     num_frames_in_animation: int
 
-    output_dir: str
     path_to_save_animation: str = None
 
+
     INCH_PER_PIXEL: ClassVar[float] = 1 / rcParams['figure.dpi']
-    formatted_file_name_per_frame: str = "%d.png"
+    formatted_file_name_per_frame: str = "frame_%d.png"
 
     def __post_init__(self):
         assert exists(self.output_dir)
@@ -24,18 +27,15 @@ class AnimatorConfig:
             self.path_to_save_animation = join(
                 self.output_dir, "animation.gif")
 
-        assert self._is_valid_file_name_format()
+        # See pg. 41 of OmniSuite 6.0 manual
+        # https://globoccess.com/omnisuite/documents/OmniSuite_6-0_manual.pdf
+        # makes sure fname matches '[texture-name]_.*'
+        valid_omnisuite_animation_file_name_pattern = r"^[a-zA-Z]+_.*$"
+        assert re.match(
+            valid_omnisuite_animation_file_name_pattern,
+            self.formatted_file_name_per_frame)
 
-    def _is_valid_file_name_format(self) -> bool:
-        return self._is_valid_percent_format()\
-            and self._is_valid_brace_format()
-
-    def _is_valid_brace_format(self) -> bool:
-        try:
-            self.formatted_file_name_per_frame.format(1)
-            return True
-        except (IndexError, KeyError, ValueError):
-            return False
+        assert self._is_valid_percent_format()
 
     def _is_valid_percent_format(self) -> bool:
         try:
@@ -45,7 +45,7 @@ class AnimatorConfig:
             return False
 
 
-@dataclass
+@dataclass(kw_only=True)
 class OmniSuiteAnimatorConfig(AnimatorConfig):
     plot_width_in_pixels: int = 4096
     plot_height_in_pixels: int = 2048
@@ -54,6 +54,7 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
     pil_image_duration_between_frames_in_ms: float = 500
 
     projection: Projection = PlateCarree()
+    transform: Projection = PlateCarree()
 
     coastlines_kwargs: dict = field(default_factory=dict)
 
@@ -63,3 +64,24 @@ class OmniSuiteAnimatorConfig(AnimatorConfig):
             self.figsize = (
                 self.plot_width_in_pixels*AnimatorConfig.INCH_PER_PIXEL,
                 self.plot_height_in_pixels*AnimatorConfig.INCH_PER_PIXEL)
+
+
+@dataclass(kw_only=True)
+class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
+    netcdf_response_var_file_path: str
+    blue_marble_path: str
+
+    blue_marble_extent = (-180, 180, -90, 90)  # full blue marble
+
+    netcdf_var_transparency_on_plot: float = 0.30
+    netcdf_var_cmap_on_plot: str = "bwr"
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert exists(self.netcdf_response_var_file_path), \
+            "You can download an example NetCDF file from" +\
+            " https://zenodo.org/records/15639060"
+        assert exists(self.blue_marble_path), \
+            "You can download blue marble PNGs from" +\
+            "https://neo.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG"
+        return

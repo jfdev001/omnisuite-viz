@@ -1,22 +1,20 @@
+"""Classes for writing/animating frames that can be imported into OmniSuite."""
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
-from noise import pnoise3
-from numpy import zeros_like
 from os import listdir
 from os.path import join
-import pdb
 from PIL import Image
 from typing import List
 from tqdm import tqdm
 
-from omnisuite_examples.grid import Grid, WorldMapGrid
+from omnisuite_examples.grid import Grid, LatLonGrid
 from omnisuite_examples.animator_config import (
     AnimatorConfig, OmniSuiteAnimatorConfig)
 
 
 class Animator(ABC):
 
-    def __init__(self, grid: Grid, config: AnimatorConfig):
+    def __init__(self, grid: Grid, config: AnimatorConfig, *args, **kwargs):
         self._grid = grid
         self._config = config
         return
@@ -32,19 +30,19 @@ class Animator(ABC):
 
     @abstractmethod
     def _configure_initial_frame():
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _plot_initial_frame(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _update_and_save_frames(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _update_frame(self, frame: int):
-        pass
+        raise NotImplementedError
 
     def _save_animation(self):
         frames = self._open_frames()
@@ -54,15 +52,15 @@ class Animator(ABC):
 
     @abstractmethod
     def _open_frames(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _save_frames_as_animation(self, frames):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _close_frames(self, frames):
-        pass
+        raise NotImplementedError
 
 
 class OmniSuiteWorldMapAnimator(Animator):
@@ -72,11 +70,9 @@ class OmniSuiteWorldMapAnimator(Animator):
         rectangle_for_full_plot_on_omniglobe = [0, 0, 1, 1]
         return rectangle_for_full_plot_on_omniglobe
 
-    def __init__(
-            self, grid: WorldMapGrid, config: OmniSuiteAnimatorConfig):
+    def __init__(self, grid: LatLonGrid, config: OmniSuiteAnimatorConfig):
         self._grid = grid
         self._config = config
-
         return
 
     def _configure_initial_frame(self):
@@ -124,52 +120,4 @@ class OmniSuiteWorldMapAnimator(Animator):
     def _close_frames(self, frames: List[Image.Image]):
         for frame in frames:
             frame.close()
-        return
-
-
-class PerlinNoiseAnimator(OmniSuiteWorldMapAnimator):
-    """Animate Perlin noise on a world map."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self._latitude_mesh = self._grid.latitude_mesh
-        self._longitude_mesh = self._grid.longitude_mesh
-        self._perlin_noise_field = zeros_like(self._latitude_mesh)
-
-        # NOTE: could create a new Config class with perlin noise values
-        self._spatial_scale = 0.05
-        self._temporal_scale = 0.02
-        self._seed = 42
-        return
-
-    def _plot_initial_frame(self):
-        # If you don't initialize the noise field, pcolormesh renders nothing
-        self._update_perlin_noise_field(0)
-
-        self._mesh = self._ax.pcolormesh(
-            self._grid.longitude,
-            self._grid.latitude,
-            self._perlin_noise_field,
-            transform=self._config.projection,
-            cmap="coolwarm"
-        )
-
-        return
-
-    def _update_frame(self, frame: int):
-        self._update_perlin_noise_field(frame)
-        self._mesh.set_array(self._perlin_noise_field.ravel())
-        return
-
-    def _update_perlin_noise_field(self, frame: int):
-        for i in range(self._perlin_noise_field.shape[0]):
-            for j in range(self._perlin_noise_field.shape[1]):
-                self._perlin_noise_field[i, j] = pnoise3(
-                    self._spatial_scale * self._longitude_mesh[i, j],
-                    self._spatial_scale * self._latitude_mesh[i, j],
-                    frame * self._temporal_scale,
-                    repeatx=360,
-                    repeaty=180,
-                    base=self._seed)
         return

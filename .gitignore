@@ -1,7 +1,11 @@
 .venv 
 **/*.swp
 
-data/
+#data/
+**/*.grib*
+**/*.grb*
+**/*.nc*
+**/*.netcdf*
 tmp*/
 
 **/__pycache__

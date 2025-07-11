@@ -1,3 +1,4 @@
+"""Classes for discrete values of grid and response variable on the grid."""
 from abc import ABC, abstractmethod
 from numpy import linspace, meshgrid, ndarray
 from typing import Tuple
@@ -17,7 +18,28 @@ class Grid2D(Grid):
         raise NotImplementedError
 
 
-class WorldMapGrid(Grid2D):
+class LatLonGrid(Grid2D):
+    @property
+    @abstractmethod
+    def latitude(self):
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def longitude(self) -> ndarray:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def response(self) -> ndarray:
+        raise NotImplementedError
+
+    @property
+    def mesh(self) -> Tuple[ndarray, ndarray]:
+        return self.latitude, self.longitude
+
+
+class WorldMapRectangularGrid(LatLonGrid):
     LONGITUDE_MIN = -180
     LONGITUDE_MAX = 180
     LATITUDE_MIN = -90
@@ -65,3 +87,33 @@ class WorldMapGrid(Grid2D):
     @property
     def latitude(self) -> ndarray:
         return self._latitude
+
+    @property
+    def response(self):
+        """this is really just a placeholder since it's unused in the example"""
+        pass
+
+
+class WorldMapNetcdfGrid(LatLonGrid):
+    """Generic world map grid where fields come (expected) from netcdf.
+
+    TODO: A bit misleading to name 'Netcdf' here since the class itself
+    is actually agnostic of the data source.
+    """
+    def __init__(self, response, latitude: ndarray, longitude: ndarray):
+        self._latitude = latitude
+        self._longitude = longitude
+        self._response = response
+        return
+
+    @property
+    def latitude(self) -> ndarray:
+        return self._latitude
+
+    @property
+    def longitude(self) -> ndarray:
+        return self._longitude
+
+    @property
+    def response(self) -> ndarray:
+        return self._response
