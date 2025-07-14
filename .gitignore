@@ -1,12 +1,18 @@
 .venv 
 **/*.swp
 
-#data/
+
+# ignore large data files 
 **/*.grib*
 **/*.grb*
 **/*.nc*
 **/*.netcdf*
+
 tmp*/
+
+# ignore files created when you pip install omnisuite-examples in an another
+# environment 
+**/build/
 
 **/__pycache__
 **/*.egg-info
