@@ -6,13 +6,13 @@ from dataclasses import dataclass
 from matplotlib.pyplot import imread
 # from metpy.calc import geopotential_to_height
 import netCDF4
+import xarray as xarr
 from numpy import ndarray
 from numpy.ma import MaskedArray
 from os import environ
 from os.path import abspath, exists
 from pathlib import Path
 from typing import ClassVar, Dict
-from xarray import open_mfdataset
 from xarray.core.dataset import Variable
 
 from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
@@ -50,9 +50,6 @@ def main():
 
     # read args
     netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
-    assert exists(netcdf_response_var_file_path), (
-        "File does not exist. Try looking in"
-        " /work/bm1233/m300685/UAICON/modes/inverse/ for GWS or BAL")
 
     netcdf_response_var_short_name: str = (
         args.netcdf_response_var_short_name)
@@ -281,7 +278,8 @@ class ICONMultifileDataReader(AbstractReader):
         return
 
     def read(self):
-        self.mfdataset = open_mfdataset(self.netcdf_response_var_file_path)
+        self.mfdataset = xarr.open_mfdataset(
+            self.netcdf_response_var_file_path)
 
         # TODO: this is not memory efficient because it gathers the
         # chunked data into a single numpy array

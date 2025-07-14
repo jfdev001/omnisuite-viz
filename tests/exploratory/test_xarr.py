@@ -1,8 +1,8 @@
 from unittest import TestCase, main, skip
 import netCDF4  # prevents xarray warning
 import xarray as xarr
-from metpy.calc import geopotential_to_height
-from metpy.units import units
+# from metpy.calc import geopotential_to_height
+# from metpy.units import units
 from pdb import set_trace
 
 
@@ -10,10 +10,27 @@ class TestXarrayOps(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gravity_wave_files_glob = "data/gravity_waves/*.nc"
+        cls.gravity_waves_files = [
+            "/work/bm1233/m300685/UAICON/modes/inverse/GWS_202212010000060.nc",
+            "/work/bm1233/m300685/UAICON/modes/inverse/GWS_202212010000061.nc"
+        ]
+        cls.gravity_wave_levante_files_glob = "/work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*006*"
         cls.gravity_wave_file = "data/gravity_waves/GWS_202603010000053.nc"
+
+        return
+
+    def test_open_mfdataset_on_files(self):
+        """open files list"""
+        mfdataset = xarr.open_mfdataset(self.gravity_waves_files)
+        return
+
+    def test_open_mfdataset_on_levante_glob(self):
+        """open levante gwave glob"""
+        mfdataset = xarr.open_mfdataset(self.gravity_wave_levante_files_glob)
         return
 
     def test_open_mfdataset_on_file(self):
+        """open single file"""
         gravity_wave_single_mfdatset = xarr.open_mfdataset(
             self.gravity_wave_file)
         shape = list(gravity_wave_single_mfdatset.sizes.values())
@@ -44,7 +61,7 @@ class TestXarrayOps(TestCase):
         return
 
     def test_open_mfdataset_on_glob(self):
-        """Automatically concatenates along the time dimension!!"""
+        """Open on glob Automatically concatenates along the time dimension!!"""
         gravity_wave_mfdataset = xarr.open_mfdataset(
             self.gravity_wave_files_glob)
         zonal_wind_var_name = "u"
