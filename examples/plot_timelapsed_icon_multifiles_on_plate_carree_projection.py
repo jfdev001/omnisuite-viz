@@ -4,12 +4,12 @@ from argparse import (
     ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
 from dataclasses import dataclass
 from matplotlib.pyplot import imread
-#from metpy.calc import geopotential_to_height
+# from metpy.calc import geopotential_to_height
 import netCDF4
 from numpy import ndarray
 from numpy.ma import MaskedArray
 from os import environ
-from os.path import abspath
+from os.path import abspath, exists
 from pathlib import Path
 from typing import ClassVar, Dict
 from xarray import open_mfdataset
@@ -26,6 +26,11 @@ by processing multifile ICON netcdf outputs (e.g., gravity waves, balances).
 
 Illustrates animating data that exists across many files (e.g., loaded in
 with xarray) rather than just a single file.
+
+Gravity wave data at: /work/bm1233/m300685/UAICON/modes/inverse/*GWS*
+Balance data at : /work/bm1233/m300685/UAICON/modes/inverse/*BAL*
+
+Try looking at December data.
 """
 
 
@@ -45,6 +50,10 @@ def main():
 
     # read args
     netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
+    assert exists(netcdf_response_var_file_path), (
+        "File does not exist. Try looking in"
+        " /work/bm1233/m300685/UAICON/modes/inverse/ for GWS or BAL")
+
     netcdf_response_var_short_name: str = (
         args.netcdf_response_var_short_name)
     blue_marble_path: str = args.blue_marble_path
@@ -170,7 +179,7 @@ def cli():
         action=BooleanOptionalAction,
         default=True)
 
-    default_level_ix = 0
+    default_level_ix = 72  # based on conversation with P. Ghosh
     read_group.add_argument(
         "--level-ix",
         type=int,
