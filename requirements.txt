@@ -7,3 +7,4 @@ tqdm
 xarray
 dask
 metpy
+noise # perlin noise: https://pypi.org/project/noise/, requires C++ build tools on windows
