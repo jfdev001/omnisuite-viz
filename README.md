@@ -17,8 +17,8 @@ cd ~/
 git clone https://github.com/jfdev001/omnisuite-examples.git
 ```
 
-If you wish to use `omnisuite-examples` as a dependency in a Python package
-that you are developing, then do the following:
+If you wish only to use `omnisuite-examples` as a dependency in a Python package
+that you are developing and NOT run the examples, then do the following:
 
 ```shell
 path_to_my_python_pkg="path/to/my-py-pkg"
@@ -26,14 +26,15 @@ cd $path_to_my_python_pkg
 pip install ~/omnisuite-examples 
 ```
 
-If you wish to develop/contribute to `omnisuite-examples`, then do the 
-following:
+If you wish to develop/contribute to `omnisuite-examples` AND/OR run the 
+examples, then do the following:
 
 ```shell
 cd ~/omnisuite-examples
 python3 -m venv .venv  
 source .venv/bin/activate # or use `direnv allow .` if you have direnv installed
 pip install -r requirements-dev.txt  
+pip install -e .
 ``` 
 
 ## Docker
