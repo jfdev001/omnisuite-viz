@@ -1,6 +1,8 @@
-from unittest import TestCase, main
+from unittest import TestCase, main, skip
 import netCDF4  # prevents xarray warning
 import xarray as xarr
+from metpy.calc import geopotential_to_height
+from metpy.units import units
 from pdb import set_trace
 
 
@@ -18,6 +20,27 @@ class TestXarrayOps(TestCase):
         time_dim = shape[0]
         expected_time_dim = 1
         self.assertEqual(time_dim, expected_time_dim)
+        return
+
+    @skip("slow conversion process")
+    def test_geopotential_height_to_geometric_height(self):
+        gravity_wave_single_mfdatset = xarr.open_mfdataset(
+            self.gravity_wave_file)
+        geopotential_height_var_name = "Z"
+        geopotential_height = (
+            gravity_wave_single_mfdatset
+            .variables
+            .get(geopotential_height_var_name)
+            .values
+        )
+
+        STANDARD_GRAVITY: float = 9.80665
+        geopotential = geopotential_height / STANDARD_GRAVITY
+        geopotential_quantities = units.Quantity(geopotential, "m^2/s^2")
+
+        # TODO: this does not seem to be the correct calculation because
+        geometric_height = geopotential_to_height(geopotential_quantities)
+
         return
 
     def test_open_mfdataset_on_glob(self):

@@ -4,7 +4,7 @@ from argparse import (
     ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
 from dataclasses import dataclass
 from matplotlib.pyplot import imread
-from metpy.calc import geopotential_to_height
+#from metpy.calc import geopotential_to_height
 import netCDF4
 from numpy import ndarray
 from numpy.ma import MaskedArray
@@ -309,12 +309,16 @@ class ICONMultifileDataReader(AbstractReader):
         if self.use_level_ix:
             self.response = self.response[:, self.level_ix, :, :]
         else:
+            raise NotImplementedError(
+                "Uncertain how to get geometric height from fields in netdcf."
+                " Discussion with P. Ghosh on earlier problem indicates that"
+                " that /work/bm1233/b383395/icon-visualization-examples/scripts/modes_GWsDensity_032019_climatology_test.py"
+                " contains the generalized height and sigma map 1:1")
             # TODO: move to utils func
             # TODO: you need to use geopotential to height here
             # Use the upper and lower bounds of height to average response var...
             # thus converting 4th order tensor to 3rd order tensor for plotting..
             # this requires determining the index of the upper and lower bounds!
-            raise NotImplementedError
             height_mean = self.height.mean(
                 axis=(
                     ICONConfigConsts.HEIGHT_LAT_AXIS,
