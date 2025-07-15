@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+python examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
+    tmp-bal/ --save-animation\
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/BAL_202212*006*
+
+    
+ 
