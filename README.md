@@ -1,6 +1,6 @@
-[![CI](https://github.com/jfdev001/omnisuite-examples/actions/workflows/ci.yml/badge.svg)](https://github.com/jfdev001/omnisuite-examples/actions/workflows/ci.yml) 
+[![CI](https://github.com/jfdev001/omnisuite-viz/actions/workflows/ci.yml/badge.svg)](https://github.com/jfdev001/omnisuite-viz/actions/workflows/ci.yml) 
 
-# omnisuite-examples
+# omnisuite-viz
 
 Generate example plots that can be used in [OmniSuite](https://globoccess.com/omniglobes/).
 
@@ -10,7 +10,7 @@ Currently under development, so use `pip install -e .`.
 
 # usage
 
-The package `omnisuite_examples` is intended to facilitate the generation of 
+The package `omnisuite_viz` is intended to facilitate the generation of 
 plots on a [Plate-Carree](https://en.wikipedia.org/wiki/Equirectangular_projection) 
 projection of the Earth for specific use with the visualization software 
 OmniSuite

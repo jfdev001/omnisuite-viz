@@ -2,7 +2,7 @@
 TODO:
 
 * Try to change this file to match the description in:
-https://github.com/jfdev001/omnisuite-examples/issues/33#issuecomment-3052705623
+https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623
 
 
 """
@@ -24,10 +24,10 @@ from typing import ClassVar, Dict, Union
 # TODO: maybe you have to import metpy as well?
 import xarray as xarr
 
-from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import NetcdfAnimatorConfig
-from omnisuite_examples.grid import WorldMapNetcdfGrid
-from omnisuite_examples.reader import AbstractReader
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+from omnisuite_viz.animator_config import NetcdfAnimatorConfig
+from omnisuite_viz.grid import WorldMapNetcdfGrid
+from omnisuite_viz.reader import AbstractReader
 
 DESCRIPTION = f"""
 Save animation frames (and optionally combine the frames to a gif) of

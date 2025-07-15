@@ -3,9 +3,9 @@ from numpy import zeros_like
 from noise import pnoise3
 import os
 
-from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
-from omnisuite_examples.grid import WorldMapRectangularGrid
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+from omnisuite_viz.animator_config import OmniSuiteAnimatorConfig
+from omnisuite_viz.grid import WorldMapRectangularGrid
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of Perlin
