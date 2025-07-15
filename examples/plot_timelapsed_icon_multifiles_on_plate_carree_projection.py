@@ -15,10 +15,10 @@ from pathlib import Path
 from typing import ClassVar, Dict
 from xarray.core.dataset import Variable
 
-from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import NetcdfAnimatorConfig
-from omnisuite_examples.grid import WorldMapNetcdfGrid
-from omnisuite_examples.reader import AbstractReader
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+from omnisuite_viz.animator_config import NetcdfAnimatorConfig
+from omnisuite_viz.grid import WorldMapNetcdfGrid
+from omnisuite_viz.reader import AbstractReader
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of

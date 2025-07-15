@@ -7,8 +7,8 @@ from PIL import Image
 from typing import List
 from tqdm import tqdm
 
-from omnisuite_examples.grid import Grid, LatLonGrid
-from omnisuite_examples.animator_config import (
+from omnisuite_viz.grid import Grid, LatLonGrid
+from omnisuite_viz.animator_config import (
     AnimatorConfig, OmniSuiteAnimatorConfig)
 
 

@@ -13,8 +13,8 @@ def parse_requirements():
 
 
 setup(
-    name="omnisuite-examples",
-    packages=find_packages(include=["omnisuite_examples"]),
+    name="omnisuite-viz",
+    packages=find_packages(include=["omnisuite_viz"]),
     version='0.1.0',
     description='Example plot generation for use with OmniSuite',
     long_description=readme(),

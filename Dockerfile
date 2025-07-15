@@ -1,4 +1,4 @@
-# @brief Sets up docker development environment for omnisuite-examples
+# @brief Sets up docker development environment for omnisuite-viz
 # 
 # @todo
 # * Could git clone the source code instead
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
-WORKDIR /omnisuite-examples 
+WORKDIR /omnisuite-viz 
 
 # Copy repo files
 COPY . .

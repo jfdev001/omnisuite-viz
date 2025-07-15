@@ -1,7 +1,7 @@
 """Classes for reading and post processing data."""
 
 from abc import ABC, abstractmethod
-from omnisuite_examples.grid import Grid2D
+from omnisuite_viz.grid import Grid2D
 
 
 class AbstractReader(ABC):

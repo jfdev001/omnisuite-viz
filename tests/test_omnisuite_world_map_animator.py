@@ -3,9 +3,9 @@ from PIL import Image
 import unittest
 
 from tests.animator_test_mixin import AnimatorTestMixin
-from omnisuite_examples.grid import WorldMapRectangularGrid
-from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import OmniSuiteAnimatorConfig
+from omnisuite_viz.grid import WorldMapRectangularGrid
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+from omnisuite_viz.animator_config import OmniSuiteAnimatorConfig
 
 
 class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):

@@ -7,9 +7,9 @@ from os import environ
 from os.path import abspath
 from pathlib import Path
 
-from omnisuite_examples.animator import OmniSuiteWorldMapAnimator
-from omnisuite_examples.animator_config import NetcdfAnimatorConfig
-from omnisuite_examples.grid import WorldMapRectangularGrid
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+from omnisuite_viz.animator_config import NetcdfAnimatorConfig
+from omnisuite_viz.grid import WorldMapRectangularGrid
 
 DESCRIPTION = """
 Save animation frames (and optionally combine the frames to a gif) of

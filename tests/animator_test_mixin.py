@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import tempfile
 
-from omnisuite_examples.animator import Animator
+from omnisuite_viz.animator import Animator
 
 
 class AnimatorTestMixin(ABC):

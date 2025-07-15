@@ -10,7 +10,7 @@
 
 tmp*/
 
-# ignore files created when you pip install omnisuite-examples in an another
+# ignore files created when you pip install omnisuite-viz in an another
 # environment 
 **/build/
 
