@@ -33,12 +33,8 @@ altitudes of 0 and 10_000 meters. Providing these as lower and upper bounds
 will mean that an average of a response variable (e.g., zonal wind) will be
 taken and then plotted on the Plate-Carree projection.
 
-
 You will also need the [blue marble image](https://neo.gsfc.nasa.gov/servlet/RenderData?si=526300&cs=rgb&format=PNG&width=3600&height=1800) since this is  used as the 
-"background" for your temperature, wind, etc. data on the globe. By default,
-the script looks for this image under the path
-"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png", so
-you should download the image from NASA and save it there.
+"background" for your temperature, wind, etc. data on the globe.
 """
 
 
@@ -197,13 +193,19 @@ def cli():
         type=str,
         default=default_netcdf_long_name_of_height_var)
 
-    default_blue_marble_path = Path(
-        f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+    try:
+        default_blue_marble_path = Path(
+            f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+        blue_marble_required = False
+    except KeyError:
+        default_blue_marble_path = None
+        blue_marble_required = True
     parser.add_argument(
         "--blue-marble-path",
         type=str,
         help=f"path to blue marble PNG. (default: {default_blue_marble_path})",
-        default=default_blue_marble_path)
+        default=default_blue_marble_path,
+        required=blue_marble_required)
 
     default_min_vertical_layer_height_in_meters = (
         ICONMonthlyConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS)

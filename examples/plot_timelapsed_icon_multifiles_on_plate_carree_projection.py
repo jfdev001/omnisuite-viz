@@ -27,10 +27,8 @@ by processing multifile ICON netcdf outputs (e.g., gravity waves, balances).
 Illustrates animating data that exists across many files (e.g., loaded in
 with xarray) rather than just a single file.
 
-Gravity wave data at: /work/bm1233/m300685/UAICON/modes/inverse/*GWS*
-Balance data at : /work/bm1233/m300685/UAICON/modes/inverse/*BAL*
-
-Try looking at December data.
+See `tests/exploratory/run_gravity_wave_example` or 
+`tests/exploratory/run_bal_example` for animation outputs on Levante.
 """
 
 
@@ -203,13 +201,19 @@ def cli():
         f" (default: {default_max_vertical_layer_height_in_meters})",
         default=default_max_vertical_layer_height_in_meters)
 
-    default_blue_marble_path = Path(
-        f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+    try:
+        default_blue_marble_path = Path(
+            f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+        blue_marble_required = False
+    except KeyError:
+        default_blue_marble_path = None
+        blue_marble_required = True
     read_group.add_argument(
         "--blue-marble-path",
         type=str,
         help=f"path to blue marble PNG. (default: {default_blue_marble_path})",
-        default=default_blue_marble_path)
+        default=default_blue_marble_path,
+        required=blue_marble_required)
 
     config_group = parser.add_argument_group("config")
 
