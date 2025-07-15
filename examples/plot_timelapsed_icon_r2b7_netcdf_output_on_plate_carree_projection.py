@@ -460,7 +460,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             self._blue_marble_img,
             extent=self._config.blue_marble_extent,
             transform=self._config.transform,
-            zorder=1,)
+            zorder=0,
+            alpha=0.75)
 
         # Overlay the image of the Earth with your data of interest
         t0 = 0
@@ -468,11 +469,12 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             self._grid.longitude,
             self._grid.latitude,
             self._grid.response[t0],
-            zorder=2,  # must have for data plotted "on top of" blue marble
+            zorder=10,  # must have for data plotted "on top of" blue marble
             antialiased=True,
             transform=self._config.transform,
-            alpha=self._config.netcdf_var_transparency_on_plot,
-            cmap=self._config.netcdf_var_cmap_on_plot)
+            # alpha=self._config.netcdf_var_transparency_on_plot,
+            cmap=self._config.netcdf_var_cmap_on_plot,
+            alpha=0.5)
 
         return
 
