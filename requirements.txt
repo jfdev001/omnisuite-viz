@@ -2,6 +2,6 @@ cartopy
 matplotlib
 netCDF4
 numpy
-pre-commit
 tqdm
 xarray
+noise # perlin noise: https://pypi.org/project/noise/, requires C++ build tools on windows
