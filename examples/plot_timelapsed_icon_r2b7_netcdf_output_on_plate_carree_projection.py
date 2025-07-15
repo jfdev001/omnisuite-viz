@@ -8,7 +8,7 @@ from netCDF4 import Dataset
 from numpy import ndarray
 from numpy.ma import MaskedArray
 from os import environ
-from os.path import abspath
+from os.path import abspath, exists
 from pathlib import Path
 from typing import ClassVar, Dict
 
@@ -21,6 +21,10 @@ DESCRIPTION = f"""
 Save animation frames (and optionally combine the frames to a gif) of
 netcdf outputs from an ICON simulation on Plate-Carree projection.
 
+IMPORTANT:  You will need to make sure the R2B7 data is available for this script.
+by default, the script looks in `data/R2B7_free_30_years/*.nc', so you can
+either (a) symlink from `/work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/R2B7_free_30_years` or (b) use other local data.
+
 Since ICON height files specify the altitude of a simulation output,
 the user specifies the lower and upper bounds for the altitude (height)
 and an average of the response variable of interest over this vertical
@@ -29,10 +33,6 @@ altitudes of 0 and 10_000 meters. Providing these as lower and upper bounds
 will mean that an average of a response variable (e.g., zonal wind) will be
 taken and then plotted on the Plate-Carree projection.
 
-You will need to make sure the R2B7 data is available for this script.
-by default, the script looks in 
-`data/R2B7_free_30_years/R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc`,
-so you should make sure to put your R2B7 data in that directory.
 
 You will also need the [blue marble image](https://neo.gsfc.nasa.gov/servlet/RenderData?si=526300&cs=rgb&format=PNG&width=3600&height=1800) since this is  used as the 
 "background" for your temperature, wind, etc. data on the globe. By default,
@@ -58,11 +58,17 @@ def main():
 
     # read args
     netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
+    assert exists(netcdf_response_var_file_path), (
+        "need response data file."
+        " You can try looking in /work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/R2B7_free_30_years")
     netcdf_long_name_of_response_var: str = (
         args.netcdf_long_name_of_response_var)
 
     netcdf_height_file_path: str = args.netcdf_height_file_path
     netcdf_long_name_of_height_var: str = args.netcdf_long_name_of_height_var
+    assert exists(netcdf_height_file_path), (
+        "need hfile.nc file."
+        " You can try looking in /work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/R2B7_free_30_years")
 
     blue_marble_path: str = args.blue_marble_path
 

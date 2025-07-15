@@ -1,6 +1,7 @@
 """Configuration for plots used in animation."""
 from cartopy.crs import Projection, PlateCarree
 from dataclasses import dataclass, field
+from glob import glob
 from matplotlib.pyplot import rcParams, imread
 from os.path import exists, join
 from typing import ClassVar, Tuple, Optional
@@ -78,10 +79,18 @@ class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
 
     def __post_init__(self):
         super().__post_init__()
-        assert exists(self.netcdf_response_var_file_path), \
+        assert self.is_valid_netcdf_response_var_file_path, \
             "You can download an example NetCDF file from" +\
             " https://zenodo.org/records/15639060"
         assert exists(self.blue_marble_path), \
             "You can download blue marble PNGs from" +\
             "https://neo.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG"
         return
+
+    def is_valid_netcdf_response_var_file_path(self):
+        valid_netcdf_response_var_file_path = False
+        if exists(self.netcdf_response_var_file_path):
+            valid_netcdf_response_var_file_path = True
+        elif len(glob(self.netcdf_response_var_file_path)) != 0:
+            valid_netcdf_response_var_file_path = True
+        return valid_netcdf_response_var_file_path

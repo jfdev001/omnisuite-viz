@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+python examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
+    tmp-gravity-wave/ --save-animation\
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*006*
+
+    
+ 

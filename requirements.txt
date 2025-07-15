@@ -4,5 +4,5 @@ netCDF4
 numpy
 tqdm
 xarray
+noise # perlin noise: https://pypi.org/project/noise/, requires C++ build tools on windows
 dask
-metpy
