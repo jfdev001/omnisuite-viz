@@ -15,7 +15,7 @@ plots on a [Plate-Carree](https://en.wikipedia.org/wiki/Equirectangular_projecti
 projection of the Earth for specific use with the visualization software 
 OmniSuite
 
-The workflow (under development) currently involves the following steps:
+The tentative workflow currently involves the following steps:
 * Define a `Reader` (you will need to subclass it) that reads your 
   netcdf/grib data and post processes it into a `LatLonGrid`.
     * The `LatLonGrid` (you will likely use the concrete implementation 
@@ -23,7 +23,7 @@ The workflow (under development) currently involves the following steps:
       properties (aka member data) where the `response` is a variable like 
       zonal wind, temperature, etc.
 * Define an `AnimatorConfig` (you will likely use the `NetcdfAnimatorConfig`) 
-  that stores general information like the dimension
+  that stores general information like the 
   resolution of your frames in the animation, output directory for animation, 
   file name format for frames (e.g., png, jpg), as well as the number of 
   frames in the animation itself (e.g., could be 365 frames if you have 
