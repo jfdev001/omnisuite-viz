@@ -12,4 +12,4 @@ then
 fi
 
 cdo gennn,F256 icon_grid_0026_R03B07_G.nc F256_weights.nc
-cdo -f nc remap,F256,F256_weights.nc $dwd_icon_grib_file ${dwd_icon_grib_file%.nc}_F256.nc
+cdo -f nc remap,F256,F256_weights.nc $dwd_icon_grib_file ${dwd_icon_grib_file%.grib2}_remapped_F256.nc
