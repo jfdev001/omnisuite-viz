@@ -1,13 +1,22 @@
 .venv 
 **/*.swp
 
-
 # ignore large data files 
 **/*.grib*
 **/*.grb*
 **/*.nc*
 **/*.netcdf*
+**/*.tar*
+**/*.*zip*
 
+# ignore plots
+*plot*/
+**/*.PNG
+**/*.png
+**/*.JPEG
+**/*.jpg
+
+# ignore temp directories 
 tmp*/
 
 # ignore files created when you pip install omnisuite-viz in an another
