@@ -1,27 +1,30 @@
 from __future__ import annotations
+from omnisuite_viz.reader import AbstractReader
+from omnisuite_viz.grid import WorldMapNetcdfGrid
+from omnisuite_viz.animator_config import NetcdfAnimatorConfig
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+
+from numpy.ma import MaskedArray
+from numpy import ndarray
+import xarray as xarr
+import netCDF4
+from matplotlib.pyplot import imread
 
 from argparse import (
     ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
 from dataclasses import dataclass
-from matplotlib.pyplot import imread
-# from metpy.calc import geopotential_to_height
-import netCDF4
-import xarray as xarr
-from numpy import ndarray
-from numpy.ma import MaskedArray
 from os import environ
-from os.path import abspath, exists
+from os.path import abspath
 from pathlib import Path
-from typing import ClassVar, Dict
-from xarray.core.dataset import Variable
+from typing import ClassVar
 
-from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
-from omnisuite_viz.animator_config import NetcdfAnimatorConfig
-from omnisuite_viz.grid import WorldMapNetcdfGrid
-from omnisuite_viz.reader import AbstractReader
+from cdo import Cdo
+print("Loading CDO")
+cdo = Cdo()
+
 
 DESCRIPTION = """
-Save animation frames (and optionally combine the frames to a gif) of
+Save animation frames (and optionally combine the frames to a gif) 
 by processing multifile ICON netcdf outputs (e.g., gravity waves, balances).
 
 Illustrates animating data that exists across many files (e.g., loaded in
@@ -47,7 +50,8 @@ def main():
     alpha: float = args.alpha
 
     # read args
-    netcdf_response_var_file_path: str = args.netcdf_response_var_file_path
+    netcdf_response_var_file_path: list[str] = (
+        args.netcdf_response_var_file_path)
 
     netcdf_response_var_short_name: str = (
         args.netcdf_response_var_short_name)
@@ -75,7 +79,10 @@ def main():
         max_vertical_layer_height_in_meters=(
             max_vertical_layer_height_in_meters))
 
+    print("Reading data...")
     reader.read()
+
+    print("Postprocessing data...")
     reader.postprocess()
 
     grid = reader.grid
@@ -95,7 +102,6 @@ def main():
 
         netcdf_var_cmap_on_plot=cmap,
         netcdf_var_transparency_on_plot=alpha,
-
 
         netcdf_response_var_file_path=netcdf_response_var_file_path,
         blue_marble_path=blue_marble_path)
@@ -143,19 +149,17 @@ def cli():
     parser.add_argument(
         "--save-animation",
         action=BooleanOptionalAction,
+        help="Flag to save animation as gif from generated frames. (required).",
         required=True)
 
     read_group = parser.add_argument_group("read")
 
-    default_netcdf_response_var_file_path = abspath(
-        "data/gravity_waves/*.nc")
     read_group.add_argument(
         "--netcdf-response-var-file-path",
-        default=default_netcdf_response_var_file_path,
         nargs="+",
         type=str,
-        help="path or paths or file glob to netcdf input data."
-        f" (default: {default_netcdf_response_var_file_path})")
+        help="path or paths or file glob to netcdf input data. (required)",
+        required=True)
 
     default_netcdf_response_var_short_name: str = "u"
     read_group.add_argument(
@@ -277,16 +281,36 @@ class ICONMultifileDataReader(AbstractReader):
         self.max_vertical_layer_height_in_meters = (
             max_vertical_layer_height_in_meters)
 
+        # Initialize read variables
+        self.mfdataset = None
+        self.response = None
+        self.latitude = None
+        self.longitude = None
+
         # TODO: make property?
         self.blue_marble_img = None
         return
 
     def read(self):
+        # load only the response variable to save memory
+        # TODO: optimization consideration... can you also only load
+        # the desired levels?? e.g., if you only need level 72, just load that..
+        data_vars = cdo.showname(
+            input=self.netcdf_response_var_file_path[0],
+            autoSplit=' ')
+        data_vars_to_drop = [
+            var for var in data_vars
+            if var != self.netcdf_response_var_short_name]
+
         self.mfdataset = xarr.open_mfdataset(
-            self.netcdf_response_var_file_path)
+            self.netcdf_response_var_file_path,
+            drop_variables=data_vars_to_drop)
 
         # TODO: this is not memory efficient because it gathers the
-        # chunked data into a single numpy array
+        # chunked data into a single numpy array... though it doesn't seem
+        # like this operation takes a long time... the memory intensive
+        # portion seems to be in the xarr open... maybe these are just pointers
+        # to the opened dataset...
         self.response = (
             self.mfdataset
             .variables
@@ -305,12 +329,6 @@ class ICONMultifileDataReader(AbstractReader):
             .get(ICONConfigConsts.LONGITUDE_NETCDF_SHORT_VAR_NAME)
             .values)
 
-        self.geopotential_height = (
-            self.mfdataset
-            .variables
-            .get(ICONConfigConsts.GEOPOTENTIAL_HEIGHT_NETCDF_SHORT_VAR_NAME)
-            .values)
-
         # for plotting blue marble in animator (note: move elsewhere??)
         self.blue_marble_img = imread(self.blue_marble_path)
 
@@ -321,10 +339,9 @@ class ICONMultifileDataReader(AbstractReader):
             self.response = self.response[:, self.level_ix, :, :]
         else:
             raise NotImplementedError(
-                "Uncertain how to get geometric height from fields in netdcf."
-                " Discussion with P. Ghosh on earlier problem indicates that"
-                " that /work/bm1233/b383395/icon-visualization-examples/scripts/modes_GWsDensity_032019_climatology_test.py"
-                " contains the generalized height and sigma map 1:1")
+                " sigma = pressure/surface_pressure = P/P0, so you can get"
+                " geometric height z using scale height z = H*ln(P0/P)"
+                " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
             # TODO: move to utils func
             # TODO: you need to use geopotential to height here
             # Use the upper and lower bounds of height to average response var...

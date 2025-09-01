@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+# @brief More realistic gravity wave sample over entire year or more
+# TODO: Only loading 56 timesteps when should load 224... check naming convention
+# of files since this may be causing problems...
+[[ ! -d tmp-large-gravity-wave ]] && mkdir tmp-large-gravity-wave 
+python examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
+    tmp-gravity-wave/ --save-animation\
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_2022*
+
+    
+ 
