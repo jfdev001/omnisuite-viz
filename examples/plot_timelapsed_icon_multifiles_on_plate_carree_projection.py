@@ -16,11 +16,14 @@ from dataclasses import dataclass
 from os import environ
 from os.path import abspath
 from pathlib import Path
+from time import time
 from typing import ClassVar
 
 from cdo import Cdo
-print("Loading CDO")
+print("Loading CDO...")
 cdo = Cdo()
+
+SECONDS_PER_MINUTE: int = 60
 
 
 DESCRIPTION = """
@@ -80,7 +83,15 @@ def main():
             max_vertical_layer_height_in_meters))
 
     print("Reading data...")
+    start_read = time()
     reader.read()
+    end_read = time()
+    elapsed_read = end_read - start_read
+    read_time_in_minutes = int(elapsed_read // SECONDS_PER_MINUTE)
+    read_time_in_seconds = elapsed_read % SECONDS_PER_MINUTE
+    print(
+        "Time spent reading data:"
+        f" {read_time_in_minutes}m {read_time_in_seconds:.2f}s")
 
     print("Postprocessing data...")
     reader.postprocess()
@@ -110,6 +121,7 @@ def main():
     animator = ICONModelAnimator(
         grid=grid, config=config, blue_marble_img=blue_marble_img)
 
+    print("Making animation...")
     animator.animate()
 
     return
@@ -302,6 +314,7 @@ class ICONMultifileDataReader(AbstractReader):
             var for var in data_vars
             if var != self.netcdf_response_var_short_name]
 
+        # time consuming and memory intensive read
         self.mfdataset = xarr.open_mfdataset(
             self.netcdf_response_var_file_path,
             drop_variables=data_vars_to_drop)
