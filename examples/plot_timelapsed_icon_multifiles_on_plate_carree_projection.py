@@ -314,16 +314,12 @@ class ICONMultifileDataReader(AbstractReader):
             var for var in data_vars
             if var != self.netcdf_response_var_short_name]
 
-        # time consuming and memory intensive read
+        # time consuming and memory intensive read -- TODO: dask?
         self.mfdataset = xarr.open_mfdataset(
             self.netcdf_response_var_file_path,
             drop_variables=data_vars_to_drop)
 
-        # TODO: this is not memory efficient because it gathers the
-        # chunked data into a single numpy array... though it doesn't seem
-        # like this operation takes a long time... the memory intensive
-        # portion seems to be in the xarr open... maybe these are just pointers
-        # to the opened dataset...
+        # TODO: is this memory efficient?
         self.response = (
             self.mfdataset
             .variables
