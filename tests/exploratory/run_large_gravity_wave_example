@@ -4,7 +4,7 @@
 # @description The loaded dataset is for 6 years of data and is 107 GB in xarr.
 [[ ! -d tmp-large-gravity-wave ]] && mkdir tmp-large-gravity-wave 
 python examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py tmp-large-gravity-wave/ \
---no-save-animation \
+--save-animation \
 --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_2019* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2020* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2021* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2022* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2023* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2024*
 
 
