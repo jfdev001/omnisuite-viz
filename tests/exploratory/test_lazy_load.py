@@ -16,6 +16,11 @@ class TestLazyLoad(TestCase):
         regular_data = xarr.open_mfdataset(
             gravity_wave_december_paths, chunks=13)
 
+        response: xarr.DataArray = concat_data["u"]
+        level_name = "lev"
+        response = response.isel({level_name: 72})
+        print(response)
+
         print(concat_data)
         print(regular_data)
 

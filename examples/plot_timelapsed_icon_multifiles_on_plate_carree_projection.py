@@ -182,6 +182,11 @@ def cli():
         default=default_netcdf_response_var_short_name)
 
     read_group.add_argument(
+        "--concat-dim", type=str, default=None)
+
+    read_group.add_argument("--chunks", type=int, default=None)
+
+    read_group.add_argument(
         "--use-level-ix",
         help="flag to use --level-ix directly if true, otherwise"
         " compute an average of response variable over some region of the"
@@ -274,7 +279,10 @@ class ICONMultifileDataReader(AbstractReader):
         netcdf_response_var_short_name: str,
         blue_marble_path: str,
         use_level_ix: bool,
+        concat_dim: str = None,
+        chunks: str = None,
         level_ix: int = 0,
+        level_name: str = "lev",
         min_vertical_layer_height_in_meters: float = (
             ICONConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS),
         max_vertical_layer_height_in_meters: float = (
@@ -286,8 +294,14 @@ class ICONMultifileDataReader(AbstractReader):
             netcdf_response_var_short_name)
         self.blue_marble_path = blue_marble_path
         self.use_level_ix = use_level_ix
-        self.level_ix = level_ix
 
+        self.concat_dim = concat_dim
+        self.chunks = chunks
+
+        # TODO: put in config class? 
+        self.level_name = level_name 
+
+        self.level_ix = level_ix
         self.min_vertical_layer_height_in_meters = (
             min_vertical_layer_height_in_meters)
         self.max_vertical_layer_height_in_meters = (
@@ -305,8 +319,6 @@ class ICONMultifileDataReader(AbstractReader):
 
     def read(self):
         # load only the response variable to save memory
-        # TODO: optimization consideration... can you also only load
-        # the desired levels?? e.g., if you only need level 72, just load that..
         data_vars = cdo.showname(
             input=self.netcdf_response_var_file_path[0],
             autoSplit=' ')
@@ -314,25 +326,24 @@ class ICONMultifileDataReader(AbstractReader):
             var for var in data_vars
             if var != self.netcdf_response_var_short_name]
 
-        # time consuming and memory intensive read -- TODO: dask?
         self.mfdataset = xarr.open_mfdataset(
             self.netcdf_response_var_file_path,
-            drop_variables=data_vars_to_drop)
+            drop_variables=data_vars_to_drop,
+            concat_dim=self.concat_dim,
+            chunks=self.chunks,
+            combine="nested" if self.concat_dim is not None else "by_coords")
 
-        # TODO: is this memory efficient?
-        self.response = (
-            self.mfdataset
-            .variables
-            .get(self.netcdf_response_var_short_name)
-            .values)
+        self.response: xarr.DataArray = (
+            self.mfdataset[self.netcdf_response_var_short_name])
+        print(self.response)
 
-        self.latitude = (
+        self.latitude: ndarray = (
             self.mfdataset
             .variables
             .get(ICONConfigConsts.LATITUDE_NETCDF_SHORT_VAR_NAME)
             .values)
 
-        self.longitude = (
+        self.longitude: ndarray = (
             self.mfdataset
             .variables
             .get(ICONConfigConsts.LONGITUDE_NETCDF_SHORT_VAR_NAME)
@@ -345,60 +356,13 @@ class ICONMultifileDataReader(AbstractReader):
 
     def postprocess(self):
         if self.use_level_ix:
-            self.response = self.response[:, self.level_ix, :, :]
+            self.response = self.response.isel(
+                {self.level_name: self.level_ix})
         else:
             raise NotImplementedError(
                 " sigma = pressure/surface_pressure = P/P0, so you can get"
                 " geometric height z using scale height z = H*ln(P0/P)"
                 " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
-            # TODO: move to utils func
-            # TODO: you need to use geopotential to height here
-            # Use the upper and lower bounds of height to average response var...
-            # thus converting 4th order tensor to 3rd order tensor for plotting..
-            # this requires determining the index of the upper and lower bounds!
-            height_mean = self.height.mean(
-                axis=(
-                    ICONConfigConsts.HEIGHT_LAT_AXIS,
-                    ICONConfigConsts.HEIGHT_LON_AXIS))
-
-            assert (
-                self.min_vertical_layer_height_in_meters
-                <= self.max_vertical_layer_height_in_meters), (
-                "`min_vertical_layer_height_in_meters` must be less than or equal"
-                " `max_vertical_layer_height_in_meters`. E.g., if you desire"
-                " an average of a reponse variable in the troposphere, you would"
-                " provide 0 and 10_000 meters, respectively. Providing a lower"
-                " bound for a layer of interest that is greater than the upper"
-                " bound is non-physical."
-                " (e.g., `max_vertical_layer_height_in_meters ="
-                f" {self.max_vertical_layer_height_in_meters}` and"
-                " `min_vertical_layer_height_in_meters = "
-                f" {self.min_vertical_layer_height_in_meters}` is non-physical.")
-
-            min_vertical_layer_height_abs_diff_height_mean = (
-                self._absolute_difference(
-                    height_mean, self.min_vertical_layer_height_in_meters))
-            min_vertical_layer_height_in_meters_ix = (
-                min_vertical_layer_height_abs_diff_height_mean.argmin())
-
-            max_vertical_layer_height_abs_diff_height_mean = (
-                self._absolute_difference(
-                    height_mean, self.max_vertical_layer_height_in_meters))
-            max_vertical_layer_height_in_meters_ix = (
-                max_vertical_layer_height_abs_diff_height_mean.argmin())
-
-            # Height variable has values in decreasing order
-            # i.e., height[0] = 140_000, height[1] = 135_000, etc
-            # so to slice correctly you must slice max vertical height ix
-            # TO min vertical height index
-            assert self._is_monotonically_decreasing(height_mean)
-            layer_slice = slice(
-                max_vertical_layer_height_in_meters_ix,
-                min_vertical_layer_height_in_meters_ix+1)
-
-            response = self.response[:, layer_slice, :, :]
-            self.response: ndarray = response.mean(
-                axis=ICONConfigConsts.RESPONSE_HEIGHT_AXIS)
         return
 
     @staticmethod
@@ -450,7 +414,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
             self._grid.latitude,
-            self._grid.response[t0],
+            self._grid.response.isel(time=t0).compute().values,
             zorder=2,  # must have for data plotted "on top of" blue marble
             antialiased=True,
             transform=self._config.transform,
@@ -462,7 +426,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
     def _update_frame(self, frame: int):
         # Update frame with the value of the response variable at next
         # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
-        response_at_time = self._grid.response[frame]
+        response_at_time = self._grid.response.isel(time=frame).compute().values 
         self._mesh.set_array(response_at_time)
         return
 
