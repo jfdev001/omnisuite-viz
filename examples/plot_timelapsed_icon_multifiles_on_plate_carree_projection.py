@@ -60,6 +60,9 @@ def main():
         args.netcdf_response_var_short_name)
     blue_marble_path: str = args.blue_marble_path
 
+    concat_dim: str = args.concat_dim
+    chunks: int = args.chunks
+
     # post process args
     use_level_ix: bool = args.use_level_ix
     level_ix: int = args.level_ix
@@ -75,6 +78,9 @@ def main():
         netcdf_response_var_short_name=netcdf_response_var_short_name,
         blue_marble_path=blue_marble_path,
         use_level_ix=use_level_ix,
+
+        concat_dim=concat_dim,
+        chunks=chunks,
 
         level_ix=level_ix,
         min_vertical_layer_height_in_meters=(

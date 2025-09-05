@@ -1,13 +1,16 @@
 #!/usr/bin/bash
 # @brief More realistic gravity wave plotting sample over multiple years  
 # 
-# @description The loaded dataset is for 6 years of data and is 107 GB in xarr.
+# @description The loaded dataset is for 2 years of data and is 143 GB in xarr
+#              and is time dim = 448. implies that one year is ~70 GB...
+#              could do max 3 years then... (210 GB total??? 256 GB on compute node)
 [[ -d tmp-large-gravity-wave ]] && rm -rf tmp-large-gravity-wave 
 [[ ! -d tmp-large-gravity-wave ]] && mkdir tmp-large-gravity-wave 
 python examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py tmp-large-gravity-wave/ \
---concat-dim "time" --chunks 13\
+--concat-dim "time" \
 --save-animation \
---netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_2019* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2020* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2021* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2022* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2023* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2024*
+--netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_2019* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2020*
+# --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_2019* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2020* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2021* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2022* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2023* /work/bm1233/m300685/UAICON/modes/inverse/GWS_2024*
 
 
     
