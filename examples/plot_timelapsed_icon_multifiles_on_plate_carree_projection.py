@@ -1,28 +1,25 @@
 from __future__ import annotations
-from omnisuite_viz.reader import AbstractReader
-from omnisuite_viz.grid import WorldMapNetcdfGrid
-from omnisuite_viz.animator_config import NetcdfAnimatorConfig
-from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
 
-from numpy.ma import MaskedArray
+from argparse import (
+    ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
+from dataclasses import dataclass
+from os import environ
+from pathlib import Path
+from time import time as time_in_seconds
+from typing import ClassVar
+
+from cdo import Cdo
 from numpy import ndarray
 import numpy as np
 import xarray as xarr
 import netCDF4
 from matplotlib.pyplot import imread
 
-from argparse import (
-    ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
-from dataclasses import dataclass
-from os import environ
-from os.path import abspath
-from pathlib import Path
-from time import time
-from typing import ClassVar
+from omnisuite_viz.reader import AbstractReader
+from omnisuite_viz.grid import WorldMapNetcdfGrid
+from omnisuite_viz.animator_config import NetcdfAnimatorConfig
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
 
-from cdo import Cdo
-print("Loading CDO...")
-cdo = Cdo()
 
 SECONDS_PER_MINUTE: int = 60
 
@@ -42,6 +39,11 @@ See `tests/exploratory/run_gravity_wave_example` or
 def main():
     # -- begin parse cli --
     args = cli()
+
+    # load cdo after parsing for faster --help
+    print("Loading CDO...")
+    global cdo
+    cdo = Cdo()
 
     # config args
     save_animation: bool = args.save_animation
@@ -65,6 +67,8 @@ def main():
     chunks: int = args.chunks
 
     label_timestamp: bool = args.label_timestamp
+    time_delta_in_hours_between_consecutive_files: int = (
+        args.time_delta_in_hours_between_consecutive_files)
 
     # post process args
     use_level_ix: bool = args.use_level_ix
@@ -86,6 +90,7 @@ def main():
         chunks=chunks,
 
         label_timestamp=label_timestamp,
+        time_delta_in_hours_between_consecutive_files=time_delta_in_hours_between_consecutive_files,
 
         level_ix=level_ix,
         min_vertical_layer_height_in_meters=(
@@ -94,9 +99,9 @@ def main():
             max_vertical_layer_height_in_meters))
 
     print("Reading data...")
-    start_read = time()
+    start_read = time_in_seconds()
     reader.read()
-    end_read = time()
+    end_read = time_in_seconds()
     elapsed_read = end_read - start_read
     read_time_in_minutes = int(elapsed_read // SECONDS_PER_MINUTE)
     read_time_in_seconds = elapsed_read % SECONDS_PER_MINUTE
@@ -108,13 +113,13 @@ def main():
     reader.postprocess()
 
     grid = reader.grid
-    frame_to_new_timestamp = reader.frame_to_new_timestamp 
+    frame_to_new_timestamp = reader.frame_to_new_timestamp
     num_frames_in_animation = grid.response.shape[0]  # equal to n timesteps
 
     blue_marble_img = reader.blue_marble_img
 
     # set up plotting configuration
-    # TODO: can provide the timesteps array here if you want!! 
+    # TODO: can provide the timesteps array here if you want!!
     # subclass this config and specialize it...
     config = NetcdfAnimatorConfig(
         save_animation=save_animation,
@@ -130,7 +135,7 @@ def main():
 
         netcdf_response_var_file_path=netcdf_response_var_file_path,
         blue_marble_path=blue_marble_path)
-    config.frame_to_new_timestamp = frame_to_new_timestamp  # TODO: ugly hack 
+    config.frame_to_new_timestamp = frame_to_new_timestamp  # TODO: ugly hack
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -162,7 +167,6 @@ class ICONConfigConsts:
     RESPONSE_LEV_AXIS: ClassVar[int] = 1
     RESPONSE_LAT_AXIS: ClassVar[int] = 2
     RESPONSE_LON_AXIS: ClassVar[int] = 3
-
 
 
 def cli():
@@ -283,17 +287,23 @@ def cli():
         default=default_cmap)
 
     config_group.add_argument(
-       "--label-timestamp",
+        "--label-timestamp",
         help=(
             "Flag to label each frame title with a timestamp"
             " (default: False)"),
         action=BooleanOptionalAction,
         default=False, )
 
+    # TODO: could add position information for where the timestamp could go
+    # e.g., x-y coordinates of this ...
+
     config_group.add_argument(
-            "--time-delta-in-hours-between-consecutive-files",
-            type=int,
-            default=None)
+        "--time-delta-in-hours-between-consecutive-files",
+        type=int,
+        help="difference in hours between outputs in consecutive files."
+        " E.g., 6 implies 6 hour difference between consecutive files"
+        " (default: None).",
+        default=None)
 
     args = parser.parse_args()
 
@@ -313,9 +323,12 @@ class ICONMultifileDataReader(AbstractReader):
         netcdf_response_var_short_name: str,
         blue_marble_path: str,
         use_level_ix: bool,
-        time_delta_in_hours_between_consecutive_files: int,
         concat_dim: str = None,
         chunks: str = None,
+
+        label_timestamp: bool = False,
+        time_delta_in_hours_between_consecutive_files: int = 6,
+
         level_ix: int = 0,
         level_name: str = "lev",
         min_vertical_layer_height_in_meters: float = (
@@ -334,10 +347,10 @@ class ICONMultifileDataReader(AbstractReader):
         self.chunks = chunks
 
         self.time_delta_in_hours_between_consecutive_files = (
-            time_delta_in_hours_bewteen_consecutive_files)
+            time_delta_in_hours_between_consecutive_files)
 
-        # TODO: put in config class? 
-        self.level_name = level_name 
+        # TODO: put in config class?
+        self.level_name = level_name
 
         self.level_ix = level_ix
         self.min_vertical_layer_height_in_meters = (
@@ -351,8 +364,11 @@ class ICONMultifileDataReader(AbstractReader):
         self.latitude = None
         self.longitude = None
 
-        # initialize post process vars 
+        # initialize post process vars
         self.frame_to_new_timestamp = None
+        self.label_timestamp = label_timestamp
+        self.time_delta_in_hours_between_consecutive_files = (
+            time_delta_in_hours_between_consecutive_files)
 
         # TODO: make property?
         self.blue_marble_img = None
@@ -405,19 +421,20 @@ class ICONMultifileDataReader(AbstractReader):
                 " geometric height z using scale height z = H*ln(P0/P)"
                 " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
 
-        if self.reformat_timestamps:
+        if self.label_timestamp:
             time = self.mfdataset["time"].compute().values
             n_frames = self.response.shape[0]
             t_start = time[0]
-            delta = self.time_delta_in_hours_between_consecutive_files
+            delta = np.timedelta64(
+                self.time_delta_in_hours_between_consecutive_files, "h")
             self.frame_to_new_timestamp = self._generate_np_datetimes(
                 t_start, n_frames, delta)
         return
 
-    @staticmethod 
+    @staticmethod
     def _generate_np_datetimes(
-            start: np.datetime64, 
-            n_steps: int, 
+            start: np.datetime64,
+            n_steps: int,
             delta: np.timedelta64) -> np.ndarray:
         """
         Generate a sequence of datetimes using NumPy datetime64.
@@ -463,6 +480,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         self._grid: WorldMapNetcdfGrid
         self._config: NetcdfAnimatorConfig
         self._blue_marble_img = blue_marble_img
+
+        self.textbox = None
         return
 
     def _plot_initial_frame(self):
@@ -477,8 +496,16 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         # Overlay the image of the Earth with your data of interest
         t0 = 0
 
-        if self.config.frame_to_new_timestamp:
-            self._ax.set_title(self.config.frame_to_new_timestamp[t0])
+        if self._config.frame_to_new_timestamp is not None:
+            self.textbox = self._ax.text(
+                0.5, 0.5,
+                self._config.frame_to_new_timestamp[t0],
+                ha="center", va="center",
+                fontsize=14,
+                bbox=dict(facecolor="white", edgecolor="black",
+                          boxstyle="round,pad=0.5"),
+                transform=self._ax.transAxes
+            )
 
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
@@ -494,12 +521,14 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         return
 
     def _update_frame(self, frame: int):
+        if self._config.frame_to_new_timestamp is not None:
+            self.textbox.set_text(self._config.frame_to_new_timestamp[frame])
+
         # Update frame with the value of the response variable at next
         # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
-        response_at_time = self._grid.response.isel(time=frame).compute().values 
-        # TODO: if statement this for if not None
-        if self.config.frame_to_new_timestamp:
-            self._ax.set_title(self.config.frame_to_new_timestamp[frame])
+        response_at_time = self._grid.response.isel(
+            time=frame).compute().values
+
         self._mesh.set_array(response_at_time)
         return
 
