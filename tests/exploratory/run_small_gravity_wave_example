@@ -13,5 +13,7 @@ python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projectio
     --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*0053.nc  /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*0054.nc \
     --alpha "$alpha"\
     --label-timestamp\
-    --time-delta-in-hours-between-consecutive-files 6
+    --time-delta-in-hours-between-consecutive-files 6 \
+    --timestamp-y-pos 0.90
+	
 	

@@ -69,6 +69,8 @@ def main():
     label_timestamp: bool = args.label_timestamp
     time_delta_in_hours_between_consecutive_files: int = (
         args.time_delta_in_hours_between_consecutive_files)
+    timestamp_x_pos = args.timestamp_x_pos
+    timestamp_y_pos = args.timestamp_y_pos
 
     # post process args
     use_level_ix: bool = args.use_level_ix
@@ -135,7 +137,10 @@ def main():
 
         netcdf_response_var_file_path=netcdf_response_var_file_path,
         blue_marble_path=blue_marble_path)
-    config.frame_to_new_timestamp = frame_to_new_timestamp  # TODO: ugly hack
+    # TODO: ugly hack to modify config inplace
+    config.frame_to_new_timestamp = frame_to_new_timestamp
+    config.timestamp_x_pos = timestamp_x_pos
+    config.timestamp_y_pos = timestamp_y_pos
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -305,11 +310,32 @@ def cli():
         " (default: None).",
         default=None)
 
+    default_timestamp_x_pos = 0.50
+    config_group.add_argument(
+        "--timestamp-x-pos",
+        type=float,
+        help="relative x-position of timestamp."
+        f" (default: {default_timestamp_x_pos})",
+        default=default_timestamp_x_pos
+    )
+
+    default_timestamp_y_pos = 0.90
+    config_group.add_argument(
+        "--timestamp-y-pos",
+        type=float,
+        help="relative y-position of timestamp."
+        f" (default: {default_timestamp_y_pos})",
+        default=default_timestamp_y_pos
+    )
+
     args = parser.parse_args()
 
     if (args.label_timestamp
             and args.time_delta_in_hours_between_consecutive_files is None):
         raise ValueError
+
+    assert args.timestamp_x_pos >= 0 and args.timestamp_x_pos <= 1.0
+    assert args.timestamp_y_pos >= 0 and args.timestamp_y_pos <= 1.0
 
     return args
 
@@ -498,7 +524,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
         if self._config.frame_to_new_timestamp is not None:
             self.textbox = self._ax.text(
-                0.5, 0.5,
+                self._config.timestamp_x_pos, self._config.timestamp_y_pos,
                 self._config.frame_to_new_timestamp[t0],
                 ha="center", va="center",
                 fontsize=14,
