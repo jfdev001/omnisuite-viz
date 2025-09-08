@@ -310,7 +310,7 @@ def cli():
         " (default: None).",
         default=None)
 
-    default_timestamp_x_pos = 0.50
+    default_timestamp_x_pos = 0.942
     config_group.add_argument(
         "--timestamp-x-pos",
         type=float,
@@ -319,7 +319,7 @@ def cli():
         default=default_timestamp_x_pos
     )
 
-    default_timestamp_y_pos = 0.90
+    default_timestamp_y_pos = 0.975
     config_group.add_argument(
         "--timestamp-y-pos",
         type=float,
@@ -530,7 +530,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 fontsize=14,
                 bbox=dict(facecolor="white", edgecolor="black",
                           boxstyle="round,pad=0.5"),
-                transform=self._ax.transAxes
+                transform=self._ax.transAxes,
+                zorder=100
             )
 
         self._mesh = self._ax.pcolormesh(
