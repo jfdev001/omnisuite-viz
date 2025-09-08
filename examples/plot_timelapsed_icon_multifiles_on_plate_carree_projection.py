@@ -14,6 +14,7 @@ import numpy as np
 import xarray as xarr
 import netCDF4
 from matplotlib.pyplot import imread
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from omnisuite_viz.reader import AbstractReader
 from omnisuite_viz.grid import WorldMapNetcdfGrid
@@ -66,11 +67,13 @@ def main():
     concat_dim: str = args.concat_dim
     chunks: int = args.chunks
 
-    label_timestamp: bool = args.label_timestamp
+    show_timestamp: bool = args.show_timestamp
     time_delta_in_hours_between_consecutive_files: int = (
         args.time_delta_in_hours_between_consecutive_files)
     timestamp_x_pos = args.timestamp_x_pos
     timestamp_y_pos = args.timestamp_y_pos
+
+    show_colorbar: bool = args.show_colorbar
 
     # post process args
     use_level_ix: bool = args.use_level_ix
@@ -91,7 +94,7 @@ def main():
         concat_dim=concat_dim,
         chunks=chunks,
 
-        label_timestamp=label_timestamp,
+        show_timestamp=show_timestamp,
         time_delta_in_hours_between_consecutive_files=time_delta_in_hours_between_consecutive_files,
 
         level_ix=level_ix,
@@ -141,6 +144,11 @@ def main():
     config.frame_to_new_timestamp = frame_to_new_timestamp
     config.timestamp_x_pos = timestamp_x_pos
     config.timestamp_y_pos = timestamp_y_pos
+
+    config.show_colorbar = show_colorbar
+    config.netcdf_response_var_short_name = netcdf_response_var_short_name
+    config.netcdf_response_var_units = reader.mfdataset[
+        netcdf_response_var_short_name].attrs.get("units")
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -292,9 +300,9 @@ def cli():
         default=default_cmap)
 
     config_group.add_argument(
-        "--label-timestamp",
+        "--show-timestamp",
         help=(
-            "Flag to label each frame title with a timestamp"
+            "Flag to show each frame with a timestamp from the data"
             " (default: False)"),
         action=BooleanOptionalAction,
         default=False, )
@@ -328,15 +336,21 @@ def cli():
         default=default_timestamp_y_pos
     )
 
+    config_group.add_argument(
+        "--show-colorbar",
+        help=(
+            "Flag to show colorbar for the data (default: False)"),
+        action=BooleanOptionalAction,
+        default=False,)
+
     args = parser.parse_args()
 
-    if (args.label_timestamp
+    if (args.show_timestamp
             and args.time_delta_in_hours_between_consecutive_files is None):
         raise ValueError
 
     assert args.timestamp_x_pos >= 0 and args.timestamp_x_pos <= 1.0
     assert args.timestamp_y_pos >= 0 and args.timestamp_y_pos <= 1.0
-
     return args
 
 
@@ -352,7 +366,7 @@ class ICONMultifileDataReader(AbstractReader):
         concat_dim: str = None,
         chunks: str = None,
 
-        label_timestamp: bool = False,
+        show_timestamp: bool = False,
         time_delta_in_hours_between_consecutive_files: int = 6,
 
         level_ix: int = 0,
@@ -392,7 +406,7 @@ class ICONMultifileDataReader(AbstractReader):
 
         # initialize post process vars
         self.frame_to_new_timestamp = None
-        self.label_timestamp = label_timestamp
+        self.show_timestamp = show_timestamp
         self.time_delta_in_hours_between_consecutive_files = (
             time_delta_in_hours_between_consecutive_files)
 
@@ -447,7 +461,7 @@ class ICONMultifileDataReader(AbstractReader):
                 " geometric height z using scale height z = H*ln(P0/P)"
                 " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
 
-        if self.label_timestamp:
+        if self.show_timestamp:
             time = self.mfdataset["time"].compute().values
             n_frames = self.response.shape[0]
             t_start = time[0]
@@ -544,6 +558,24 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             transform=self._config.transform,
             alpha=self._config.netcdf_var_transparency_on_plot,
             cmap=self._config.netcdf_var_cmap_on_plot)
+
+        if self._config.show_colorbar:
+            cax = inset_axes(
+                self._ax,
+                width="35%",
+                height="2%",
+                loc="lower center",
+                borderpad=4,
+            )
+
+            cbar = self._fig.colorbar(
+                self._mesh,
+                ax=self._ax,
+                cax=cax,
+                label=f"{self._config.netcdf_response_var_short_name}"
+                f" ({self._config.netcdf_response_var_units})",
+                orientation="horizontal",
+                location="bottom")
 
         return
 
