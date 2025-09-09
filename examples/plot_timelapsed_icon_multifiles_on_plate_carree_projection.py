@@ -560,12 +560,18 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             cmap=self._config.netcdf_var_cmap_on_plot)
 
         if self._config.show_colorbar:
+            # set the min and max for the colorbar
+            max_response = self._grid.response.max().compute().values
+            min_response = self._grid.response.min().compute().values
+            self._mesh.set_clim((min_response, max_response))
+
+            # describe colorbar location
             cax = inset_axes(
                 self._ax,
                 width="35%",
                 height="2%",
                 loc="lower center",
-                borderpad=4,
+                borderpad=4  # keep colorbar from "falling off" image
             )
 
             cbar = self._fig.colorbar(

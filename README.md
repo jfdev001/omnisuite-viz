@@ -43,3 +43,7 @@ You can call
 python examples/plot_timelapsed_icon_r2b7_netcdf_output_on_plate_carree_projection.py -h 
 ```
 to get the help doc for that example.
+
+# Getting Blue Marble Backgrounds
+
+Blue marble backgrounds can be downloaded from https://github.com/jfdev001/cartopy_backgrounds

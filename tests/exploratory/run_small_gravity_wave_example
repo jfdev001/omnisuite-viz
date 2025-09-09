@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-alpha="${1:-0.5}"
+alpha="${1:-0.45}"
 debug="$2"
 if [[ $debug -eq 1 ]]
 then
@@ -15,6 +15,6 @@ python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projectio
     --show-timestamp\
     --time-delta-in-hours-between-consecutive-files 6 \
     --timestamp-x-pos 0.942 --timestamp-y-pos 0.975 \
-    --blue-marble-path ~/.cartopy_backgrounds/BlueMarble_3600x1800_5DADE2_cleaned.png
-    #--show-colorbar
+    --blue-marble-path ~/.cartopy_backgrounds/three-globe-earth-blue-marble.jpg \
+    --show-colorbar
 	
