@@ -7,7 +7,7 @@ then
     pdb="-m pdb"
 fi
 
-dirname=tmp-gravity-wave-$alpha-$annotation
+dirname=tmp-gravity-wave-$alpha-simple-bluemarble-$annotation
 [[ -d $dirname ]] && rm -rf $dirname
 [[ ! -d $dirname ]] && mkdir $dirname
 python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
@@ -21,5 +21,5 @@ python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projectio
     --blue-marble-path ~/.cartopy_backgrounds/BlueMarble_3600x1800_5DADE2_cleaned.png \
     --cmap bwr \
     --show-colorbar \
-    --level-ix 10
-	
+    --level-ix 10\
+    --mask-less-than-threshold 15	

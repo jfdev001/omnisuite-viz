@@ -75,6 +75,8 @@ def main():
 
     show_colorbar: bool = args.show_colorbar
 
+    mask_less_than_threshold: float = args.mask_less_than_threshold
+
     # post process args
     use_level_ix: bool = args.use_level_ix
     level_ix: int = args.level_ix
@@ -149,6 +151,8 @@ def main():
     config.netcdf_response_var_short_name = netcdf_response_var_short_name
     config.netcdf_response_var_units = reader.mfdataset[
         netcdf_response_var_short_name].attrs.get("units")
+
+    config.mask_less_than_threshold = mask_less_than_threshold
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -342,6 +346,14 @@ def cli():
             "Flag to show colorbar for the data (default: False)"),
         action=BooleanOptionalAction,
         default=False,)
+
+    # TODO: could add a mask greater than threshold as well...
+    config_group.add_argument(
+        "--mask-less-than-threshold",
+        help="response data values less than threshold are not plotted."
+        " (default: None)",
+        type=float,
+        default=None)
 
     args = parser.parse_args()
 
@@ -555,8 +567,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
         # Keep only grid response values above threshold
         # TODO: this is accessing private variables...
-        self._config.mask_less_than_threshold = 15
         if self._config.mask_less_than_threshold is not None:
+            print("Masking data...")
             self._grid._response = self._grid.response.where(
                 self._grid.response >= self._config.mask_less_than_threshold)
 
