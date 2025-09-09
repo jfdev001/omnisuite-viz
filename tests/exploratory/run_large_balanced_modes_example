@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# @brief More realistic balanced modes plotting sample over multiple years  
+# 
+# @description The loaded dataset is for 6 years of data and is 107 GB in xarr.
+[[ ! -d tmp-large-balanced-modes ]] && mkdir tmp-large-balanced-modes
+python -m pdb examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py tmp-large-balanced-modes/ \
+--save-animation \
+--netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/BAL_2019* /work/bm1233/m300685/UAICON/modes/inverse/BAL_2020* /work/bm1233/m300685/UAICON/modes/inverse/BAL_2021* /work/bm1233/m300685/UAICON/modes/inverse/BAL_2022* /work/bm1233/m300685/UAICON/modes/inverse/BAL_2023* /work/bm1233/m300685/UAICON/modes/inverse/BAL_2024*
+
+
+    
+ 

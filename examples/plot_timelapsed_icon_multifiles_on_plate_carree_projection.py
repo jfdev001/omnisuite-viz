@@ -1,39 +1,38 @@
 from __future__ import annotations
-from omnisuite_viz.reader import AbstractReader
-from omnisuite_viz.grid import WorldMapNetcdfGrid
-from omnisuite_viz.animator_config import NetcdfAnimatorConfig
-from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
-
-from numpy.ma import MaskedArray
-from numpy import ndarray
-import xarray as xarr
-import netCDF4
-from matplotlib.pyplot import imread
 
 from argparse import (
     ArgumentParser, BooleanOptionalAction, RawTextHelpFormatter)
 from dataclasses import dataclass
 from os import environ
-from os.path import abspath
 from pathlib import Path
-from time import time
+from time import time as time_in_seconds
 from typing import ClassVar
 
 from cdo import Cdo
-print("Loading CDO...")
-cdo = Cdo()
+from numpy import ndarray
+import numpy as np
+import xarray as xarr
+import netCDF4
+from matplotlib.pyplot import imread
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+from omnisuite_viz.reader import AbstractReader
+from omnisuite_viz.grid import WorldMapNetcdfGrid
+from omnisuite_viz.animator_config import NetcdfAnimatorConfig
+from omnisuite_viz.animator import OmniSuiteWorldMapAnimator
+
 
 SECONDS_PER_MINUTE: int = 60
 
 
 DESCRIPTION = """
-Save animation frames (and optionally combine the frames to a gif) 
+Save animation frames (and optionally combine the frames to a gif)
 by processing multifile ICON netcdf outputs (e.g., gravity waves, balances).
 
 Illustrates animating data that exists across many files (e.g., loaded in
 with xarray) rather than just a single file.
 
-See `tests/exploratory/run_gravity_wave_example` or 
+See `tests/exploratory/run_gravity_wave_example` or
 `tests/exploratory/run_bal_example` for animation outputs on Levante.
 """
 
@@ -41,6 +40,11 @@ See `tests/exploratory/run_gravity_wave_example` or
 def main():
     # -- begin parse cli --
     args = cli()
+
+    # load cdo after parsing for faster --help
+    print("Loading CDO...")
+    global cdo
+    cdo = Cdo()
 
     # config args
     save_animation: bool = args.save_animation
@@ -60,6 +64,19 @@ def main():
         args.netcdf_response_var_short_name)
     blue_marble_path: str = args.blue_marble_path
 
+    concat_dim: str = args.concat_dim
+    chunks: int = args.chunks
+
+    show_timestamp: bool = args.show_timestamp
+    time_delta_in_hours_between_consecutive_files: int = (
+        args.time_delta_in_hours_between_consecutive_files)
+    timestamp_x_pos = args.timestamp_x_pos
+    timestamp_y_pos = args.timestamp_y_pos
+
+    show_colorbar: bool = args.show_colorbar
+
+    mask_threshold_abs_value: float = args.mask_threshold_abs_value
+
     # post process args
     use_level_ix: bool = args.use_level_ix
     level_ix: int = args.level_ix
@@ -76,6 +93,12 @@ def main():
         blue_marble_path=blue_marble_path,
         use_level_ix=use_level_ix,
 
+        concat_dim=concat_dim,
+        chunks=chunks,
+
+        show_timestamp=show_timestamp,
+        time_delta_in_hours_between_consecutive_files=time_delta_in_hours_between_consecutive_files,
+
         level_ix=level_ix,
         min_vertical_layer_height_in_meters=(
             min_vertical_layer_height_in_meters),
@@ -83,9 +106,9 @@ def main():
             max_vertical_layer_height_in_meters))
 
     print("Reading data...")
-    start_read = time()
+    start_read = time_in_seconds()
     reader.read()
-    end_read = time()
+    end_read = time_in_seconds()
     elapsed_read = end_read - start_read
     read_time_in_minutes = int(elapsed_read // SECONDS_PER_MINUTE)
     read_time_in_seconds = elapsed_read % SECONDS_PER_MINUTE
@@ -97,11 +120,14 @@ def main():
     reader.postprocess()
 
     grid = reader.grid
+    frame_to_new_timestamp = reader.frame_to_new_timestamp
     num_frames_in_animation = grid.response.shape[0]  # equal to n timesteps
 
     blue_marble_img = reader.blue_marble_img
 
     # set up plotting configuration
+    # TODO: can provide the timesteps array here if you want!!
+    # subclass this config and specialize it...
     config = NetcdfAnimatorConfig(
         save_animation=save_animation,
         output_dir=output_dir,
@@ -116,6 +142,17 @@ def main():
 
         netcdf_response_var_file_path=netcdf_response_var_file_path,
         blue_marble_path=blue_marble_path)
+    # TODO: ugly hack to modify config inplace
+    config.frame_to_new_timestamp = frame_to_new_timestamp
+    config.timestamp_x_pos = timestamp_x_pos
+    config.timestamp_y_pos = timestamp_y_pos
+
+    config.show_colorbar = show_colorbar
+    config.netcdf_response_var_short_name = netcdf_response_var_short_name
+    config.netcdf_response_var_units = reader.mfdataset[
+        netcdf_response_var_short_name].attrs.get("units")
+
+    config.mask_threshold_abs_value = mask_threshold_abs_value
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -180,6 +217,16 @@ def cli():
         f" (default: {default_netcdf_response_var_short_name})",
         type=str,
         default=default_netcdf_response_var_short_name)
+
+    read_group.add_argument(
+        "--concat-dim", type=str, default=None,
+        help="name of axis to manually concatenate on for xarray."
+        " (e.g., 'time' would mean that for poorly labeled NetCDF"
+        " files for which the time coordinate does not correspond"
+        " to the actual output interval, the concatenation over the"
+        " time axis will still occur correctly)")
+
+    read_group.add_argument("--chunks", type=int, default=None)
 
     read_group.add_argument(
         "--use-level-ix",
@@ -261,7 +308,66 @@ def cli():
         type=str,
         default=default_cmap)
 
+    config_group.add_argument(
+        "--show-timestamp",
+        help=(
+            "Flag to show each frame with a timestamp from the data"
+            " (default: False)"),
+        action=BooleanOptionalAction,
+        default=False, )
+
+    # TODO: could add position information for where the timestamp could go
+    # e.g., x-y coordinates of this ...
+
+    config_group.add_argument(
+        "--time-delta-in-hours-between-consecutive-files",
+        type=int,
+        help="difference in hours between outputs in consecutive files."
+        " E.g., 6 implies 6 hour difference between consecutive files"
+        " (default: None).",
+        default=None)
+
+    default_timestamp_x_pos = 0.942
+    config_group.add_argument(
+        "--timestamp-x-pos",
+        type=float,
+        help="relative x-position of timestamp."
+        f" (default: {default_timestamp_x_pos})",
+        default=default_timestamp_x_pos
+    )
+
+    default_timestamp_y_pos = 0.975
+    config_group.add_argument(
+        "--timestamp-y-pos",
+        type=float,
+        help="relative y-position of timestamp."
+        f" (default: {default_timestamp_y_pos})",
+        default=default_timestamp_y_pos
+    )
+
+    config_group.add_argument(
+        "--show-colorbar",
+        help=(
+            "Flag to show colorbar for the data (default: False)"),
+        action=BooleanOptionalAction,
+        default=False,)
+
+    # TODO: could add a mask greater than threshold as well...
+    config_group.add_argument(
+        "--mask-threshold-abs-value",
+        help="response data above and below this value is not plotted."
+        " (default: None)",
+        type=float,
+        default=None)
+
     args = parser.parse_args()
+
+    if (args.show_timestamp
+            and args.time_delta_in_hours_between_consecutive_files is None):
+        raise ValueError
+
+    assert args.timestamp_x_pos >= 0 and args.timestamp_x_pos <= 1.0
+    assert args.timestamp_y_pos >= 0 and args.timestamp_y_pos <= 1.0
     return args
 
 
@@ -274,7 +380,14 @@ class ICONMultifileDataReader(AbstractReader):
         netcdf_response_var_short_name: str,
         blue_marble_path: str,
         use_level_ix: bool,
+        concat_dim: str = None,
+        chunks: str = None,
+
+        show_timestamp: bool = False,
+        time_delta_in_hours_between_consecutive_files: int = 6,
+
         level_ix: int = 0,
+        level_name: str = "lev",
         min_vertical_layer_height_in_meters: float = (
             ICONConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS),
         max_vertical_layer_height_in_meters: float = (
@@ -286,8 +399,17 @@ class ICONMultifileDataReader(AbstractReader):
             netcdf_response_var_short_name)
         self.blue_marble_path = blue_marble_path
         self.use_level_ix = use_level_ix
-        self.level_ix = level_ix
 
+        self.concat_dim = concat_dim
+        self.chunks = chunks
+
+        self.time_delta_in_hours_between_consecutive_files = (
+            time_delta_in_hours_between_consecutive_files)
+
+        # TODO: put in config class?
+        self.level_name = level_name
+
+        self.level_ix = level_ix
         self.min_vertical_layer_height_in_meters = (
             min_vertical_layer_height_in_meters)
         self.max_vertical_layer_height_in_meters = (
@@ -299,14 +421,18 @@ class ICONMultifileDataReader(AbstractReader):
         self.latitude = None
         self.longitude = None
 
+        # initialize post process vars
+        self.frame_to_new_timestamp = None
+        self.show_timestamp = show_timestamp
+        self.time_delta_in_hours_between_consecutive_files = (
+            time_delta_in_hours_between_consecutive_files)
+
         # TODO: make property?
         self.blue_marble_img = None
         return
 
     def read(self):
         # load only the response variable to save memory
-        # TODO: optimization consideration... can you also only load
-        # the desired levels?? e.g., if you only need level 72, just load that..
         data_vars = cdo.showname(
             input=self.netcdf_response_var_file_path[0],
             autoSplit=' ')
@@ -314,29 +440,24 @@ class ICONMultifileDataReader(AbstractReader):
             var for var in data_vars
             if var != self.netcdf_response_var_short_name]
 
-        # time consuming and memory intensive read
         self.mfdataset = xarr.open_mfdataset(
             self.netcdf_response_var_file_path,
-            drop_variables=data_vars_to_drop)
+            drop_variables=data_vars_to_drop,
+            concat_dim=self.concat_dim,
+            chunks=self.chunks,
+            combine="nested" if self.concat_dim is not None else "by_coords")
 
-        # TODO: this is not memory efficient because it gathers the
-        # chunked data into a single numpy array... though it doesn't seem
-        # like this operation takes a long time... the memory intensive
-        # portion seems to be in the xarr open... maybe these are just pointers
-        # to the opened dataset...
-        self.response = (
-            self.mfdataset
-            .variables
-            .get(self.netcdf_response_var_short_name)
-            .values)
+        self.response: xarr.DataArray = (
+            self.mfdataset[self.netcdf_response_var_short_name])
+        print(self.response)
 
-        self.latitude = (
+        self.latitude: ndarray = (
             self.mfdataset
             .variables
             .get(ICONConfigConsts.LATITUDE_NETCDF_SHORT_VAR_NAME)
             .values)
 
-        self.longitude = (
+        self.longitude: ndarray = (
             self.mfdataset
             .variables
             .get(ICONConfigConsts.LONGITUDE_NETCDF_SHORT_VAR_NAME)
@@ -349,71 +470,48 @@ class ICONMultifileDataReader(AbstractReader):
 
     def postprocess(self):
         if self.use_level_ix:
-            self.response = self.response[:, self.level_ix, :, :]
+            self.response = self.response.isel(
+                {self.level_name: self.level_ix})
         else:
             raise NotImplementedError(
                 " sigma = pressure/surface_pressure = P/P0, so you can get"
                 " geometric height z using scale height z = H*ln(P0/P)"
                 " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
-            # TODO: move to utils func
-            # TODO: you need to use geopotential to height here
-            # Use the upper and lower bounds of height to average response var...
-            # thus converting 4th order tensor to 3rd order tensor for plotting..
-            # this requires determining the index of the upper and lower bounds!
-            height_mean = self.height.mean(
-                axis=(
-                    ICONConfigConsts.HEIGHT_LAT_AXIS,
-                    ICONConfigConsts.HEIGHT_LON_AXIS))
 
-            assert (
-                self.min_vertical_layer_height_in_meters
-                <= self.max_vertical_layer_height_in_meters), (
-                "`min_vertical_layer_height_in_meters` must be less than or equal"
-                " `max_vertical_layer_height_in_meters`. E.g., if you desire"
-                " an average of a reponse variable in the troposphere, you would"
-                " provide 0 and 10_000 meters, respectively. Providing a lower"
-                " bound for a layer of interest that is greater than the upper"
-                " bound is non-physical."
-                " (e.g., `max_vertical_layer_height_in_meters ="
-                f" {self.max_vertical_layer_height_in_meters}` and"
-                " `min_vertical_layer_height_in_meters = "
-                f" {self.min_vertical_layer_height_in_meters}` is non-physical.")
-
-            min_vertical_layer_height_abs_diff_height_mean = (
-                self._absolute_difference(
-                    height_mean, self.min_vertical_layer_height_in_meters))
-            min_vertical_layer_height_in_meters_ix = (
-                min_vertical_layer_height_abs_diff_height_mean.argmin())
-
-            max_vertical_layer_height_abs_diff_height_mean = (
-                self._absolute_difference(
-                    height_mean, self.max_vertical_layer_height_in_meters))
-            max_vertical_layer_height_in_meters_ix = (
-                max_vertical_layer_height_abs_diff_height_mean.argmin())
-
-            # Height variable has values in decreasing order
-            # i.e., height[0] = 140_000, height[1] = 135_000, etc
-            # so to slice correctly you must slice max vertical height ix
-            # TO min vertical height index
-            assert self._is_monotonically_decreasing(height_mean)
-            layer_slice = slice(
-                max_vertical_layer_height_in_meters_ix,
-                min_vertical_layer_height_in_meters_ix+1)
-
-            response = self.response[:, layer_slice, :, :]
-            self.response: ndarray = response.mean(
-                axis=ICONConfigConsts.RESPONSE_HEIGHT_AXIS)
+        if self.show_timestamp:
+            time = self.mfdataset["time"].compute().values
+            n_frames = self.response.shape[0]
+            t_start = time[0]
+            delta = np.timedelta64(
+                self.time_delta_in_hours_between_consecutive_files, "h")
+            self.frame_to_new_timestamp = self._generate_np_datetimes(
+                t_start, n_frames, delta)
         return
 
     @staticmethod
-    def _is_monotonically_decreasing(arr: ndarray):
-        assert len(arr.shape) == 1
-        n = arr.shape[0]
-        return ((arr[0:n-1] - arr[1:n]) > 0).all()
+    def _generate_np_datetimes(
+            start: np.datetime64,
+            n_steps: int,
+            delta: np.timedelta64) -> np.ndarray:
+        """
+        Generate a sequence of datetimes using NumPy datetime64.
 
-    @staticmethod
-    def _absolute_difference(mask_arr1: MaskedArray, mask_arr2: MaskedArray):
-        return (mask_arr1 - mask_arr2).__abs__()
+        Parameters
+        ----------
+        start : np.datetime64
+            The initial datetime (t0).
+        n_steps : int
+            Number of steps to generate (including t0).
+        delta : np.timedelta64
+            Time difference between consecutive steps.
+
+        Returns
+        -------
+        np.ndarray
+            Array of np.datetime64 values.
+        """
+        steps = np.arange(n_steps) * delta
+        return (start + steps).astype('datetime64[s]')
 
     @property
     def grid(self) -> WorldMapNetcdfGrid:
@@ -432,13 +530,16 @@ class ICONMultifileDataReader(AbstractReader):
 
 class ICONModelAnimator(OmniSuiteWorldMapAnimator):
     def __init__(self, grid, config, blue_marble_img):
-        """ 
+        """
         TODO: Ugly constructor??
         """
         super().__init__(grid, config)
         self._grid: WorldMapNetcdfGrid
         self._config: NetcdfAnimatorConfig
         self._blue_marble_img = blue_marble_img
+
+        self._mesh = None
+        self.textbox = None
         return
 
     def _plot_initial_frame(self):
@@ -447,26 +548,84 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             self._blue_marble_img,
             extent=self._config.blue_marble_extent,
             transform=self._config.transform,
-            zorder=1,)
+            # TODO: could make zorder a part of configure...
+            zorder=0,)
 
         # Overlay the image of the Earth with your data of interest
         t0 = 0
+
+        if self._config.frame_to_new_timestamp is not None:
+            self.textbox = self._ax.text(
+                self._config.timestamp_x_pos, self._config.timestamp_y_pos,
+                self._config.frame_to_new_timestamp[t0],
+                ha="center", va="center",
+                fontsize=14,
+                bbox=dict(facecolor="white", edgecolor="black",
+                          boxstyle="round,pad=0.5"),
+                transform=self._ax.transAxes,
+                zorder=100
+            )
+
+        # cache min/max before modifying grid response in place
+        if self._config.show_colorbar:
+            max_response = self._grid.response.max().compute().values
+            min_response = self._grid.response.min().compute().values
+
+        # Keep only grid response values above threshold
+        # TODO: this is accessing private variables...
+        if self._config.mask_threshold_abs_value is not None:
+            print("Masking data...")
+            response = self._grid.response
+            leq_geq_mask = (
+                (response >= abs(self._config.mask_threshold_abs_value)) |
+                (response <= -abs(self._config.mask_threshold_abs_value))
+            )
+            self._grid._response = self._grid.response.where(leq_geq_mask)
+
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
             self._grid.latitude,
-            self._grid.response[t0],
-            zorder=2,  # must have for data plotted "on top of" blue marble
+            self._grid.response.isel(time=t0).compute().values,
+            # TODO: could make zorder a part of configure...
+            zorder=10,  # must have for data plotted "on top of" blue marble
             antialiased=True,
             transform=self._config.transform,
             alpha=self._config.netcdf_var_transparency_on_plot,
             cmap=self._config.netcdf_var_cmap_on_plot)
 
+        if self._config.show_colorbar:
+            print("Showing colorbar...")
+            self._mesh.set_clim((min_response, max_response))
+
+            # describe colorbar location
+            cax = inset_axes(
+                self._ax,
+                width="35%",
+                height="2%",
+                loc="lower center",
+                borderpad=4  # keep colorbar from "falling off" image
+            )
+
+            self._fig.colorbar(
+                self._mesh,
+                ax=self._ax,
+                cax=cax,
+                label=f"{self._config.netcdf_response_var_short_name}"
+                f" ({self._config.netcdf_response_var_units})",
+                orientation="horizontal",
+                location="bottom")
+
         return
 
     def _update_frame(self, frame: int):
+        if self._config.frame_to_new_timestamp is not None:
+            self.textbox.set_text(self._config.frame_to_new_timestamp[frame])
+
         # Update frame with the value of the response variable at next
         # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
-        response_at_time = self._grid.response[frame]
+        response_at_time = self._grid.response.isel(
+            time=frame).compute().values
+
         self._mesh.set_array(response_at_time)
         return
 

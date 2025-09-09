@@ -16,7 +16,7 @@ class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
         self.output_dir = self.temp_dir.name
         self.num_frames_in_animation = 2
         self._config = OmniSuiteAnimatorConfig(
-            save_animation=False,
+            save_animation=True,
             output_dir=self.output_dir,
             num_frames_in_animation=self.num_frames_in_animation)
 
@@ -27,7 +27,8 @@ class TestOmniSuiteWorldMapAnimator(AnimatorTestMixin, unittest.TestCase):
 
     def assert_animate(self):
         self.assertEqual(
-            len(listdir(self.output_dir)), self.num_frames_in_animation)
+            len([f for f in listdir(self.output_dir) if ".gif" not in f]),
+            self.num_frames_in_animation)
         return
 
 
