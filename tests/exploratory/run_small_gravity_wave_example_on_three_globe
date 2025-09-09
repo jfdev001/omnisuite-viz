@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-alpha="${1:-0.60}"
+alpha="${1:-0.40}"
 debug="$2"
 annotation="$3"
 if [[ $debug -eq 1 ]]
@@ -22,4 +22,4 @@ python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projectio
     --cmap bwr \
     --show-colorbar \
     --level-ix 10\
-    --mask-less-than-threshold 15	
+    --mask-threshold-abs-value 15

@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 from os import listdir
-from os.path import join
+from os.path import join, getctime
 from PIL import Image
 from typing import List
 from tqdm import tqdm
@@ -103,9 +103,12 @@ class OmniSuiteWorldMapAnimator(Animator):
         return
 
     def _open_frames(self) -> List[Image.Image]:
+        files_sorted_by_creation_date = sorted(
+            listdir(self._config.output_dir),
+            key=lambda fpath: getctime(join(self._config.output_dir, fpath)))
         frames: List[Image.Image] = [
             Image.open(join(self._config.output_dir, f))
-            for f in listdir(self._config.output_dir)]
+            for f in files_sorted_by_creation_date]
         return frames
 
     def _save_frames_as_animation(self, frames: List[Image.Image]):

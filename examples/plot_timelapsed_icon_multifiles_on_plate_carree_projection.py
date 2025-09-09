@@ -26,13 +26,13 @@ SECONDS_PER_MINUTE: int = 60
 
 
 DESCRIPTION = """
-Save animation frames (and optionally combine the frames to a gif) 
+Save animation frames (and optionally combine the frames to a gif)
 by processing multifile ICON netcdf outputs (e.g., gravity waves, balances).
 
 Illustrates animating data that exists across many files (e.g., loaded in
 with xarray) rather than just a single file.
 
-See `tests/exploratory/run_gravity_wave_example` or 
+See `tests/exploratory/run_gravity_wave_example` or
 `tests/exploratory/run_bal_example` for animation outputs on Levante.
 """
 
@@ -75,7 +75,7 @@ def main():
 
     show_colorbar: bool = args.show_colorbar
 
-    mask_less_than_threshold: float = args.mask_less_than_threshold
+    mask_threshold_abs_value: float = args.mask_threshold_abs_value
 
     # post process args
     use_level_ix: bool = args.use_level_ix
@@ -152,7 +152,7 @@ def main():
     config.netcdf_response_var_units = reader.mfdataset[
         netcdf_response_var_short_name].attrs.get("units")
 
-    config.mask_less_than_threshold = mask_less_than_threshold
+    config.mask_threshold_abs_value = mask_threshold_abs_value
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -219,7 +219,12 @@ def cli():
         default=default_netcdf_response_var_short_name)
 
     read_group.add_argument(
-        "--concat-dim", type=str, default=None)
+        "--concat-dim", type=str, default=None,
+        help="name of axis to manually concatenate on for xarray."
+        " (e.g., 'time' would mean that for poorly labeled NetCDF"
+        " files for which the time coordinate does not correspond"
+        " to the actual output interval, the concatenation over the"
+        " time axis will still occur correctly)")
 
     read_group.add_argument("--chunks", type=int, default=None)
 
@@ -349,8 +354,8 @@ def cli():
 
     # TODO: could add a mask greater than threshold as well...
     config_group.add_argument(
-        "--mask-less-than-threshold",
-        help="response data values less than threshold are not plotted."
+        "--mask-threshold-abs-value",
+        help="response data above and below this value is not plotted."
         " (default: None)",
         type=float,
         default=None)
@@ -525,7 +530,7 @@ class ICONMultifileDataReader(AbstractReader):
 
 class ICONModelAnimator(OmniSuiteWorldMapAnimator):
     def __init__(self, grid, config, blue_marble_img):
-        """ 
+        """
         TODO: Ugly constructor??
         """
         super().__init__(grid, config)
@@ -533,6 +538,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         self._config: NetcdfAnimatorConfig
         self._blue_marble_img = blue_marble_img
 
+        self._mesh = None
         self.textbox = None
         return
 
@@ -567,10 +573,14 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
         # Keep only grid response values above threshold
         # TODO: this is accessing private variables...
-        if self._config.mask_less_than_threshold is not None:
+        if self._config.mask_threshold_abs_value is not None:
             print("Masking data...")
-            self._grid._response = self._grid.response.where(
-                self._grid.response >= self._config.mask_less_than_threshold)
+            response = self._grid.response
+            leq_geq_mask = (
+                (response >= abs(self._config.mask_threshold_abs_value)) |
+                (response <= -abs(self._config.mask_threshold_abs_value))
+            )
+            self._grid._response = self._grid.response.where(leq_geq_mask)
 
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
@@ -596,7 +606,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 borderpad=4  # keep colorbar from "falling off" image
             )
 
-            cbar = self._fig.colorbar(
+            self._fig.colorbar(
                 self._mesh,
                 ax=self._ax,
                 cax=cax,
