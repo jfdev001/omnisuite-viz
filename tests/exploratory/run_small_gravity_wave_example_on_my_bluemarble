@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+alpha="${1:-0.60}"
+debug="$2"
+annotation="$3"
+if [[ $debug -eq 1 ]]
+then
+    pdb="-m pdb"
+fi
+
+dirname=tmp-gravity-wave-$alpha-$annotation
+[[ -d $dirname ]] && rm -rf $dirname
+[[ ! -d $dirname ]] && mkdir $dirname
+python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
+    $dirname \
+    --save-animation\
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*0053.nc  /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*0054.nc \
+    --alpha "$alpha"\
+    --show-timestamp\
+    --time-delta-in-hours-between-consecutive-files 6 \
+    --timestamp-x-pos 0.942 --timestamp-y-pos 0.975 \
+    --blue-marble-path ~/.cartopy_backgrounds/BlueMarble_3600x1800_5DADE2_cleaned.png \
+    --cmap bwr \
+    --show-colorbar \
+    --level-ix 10
+	
