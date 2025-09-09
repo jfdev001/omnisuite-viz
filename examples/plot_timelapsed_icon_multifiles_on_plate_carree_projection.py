@@ -548,6 +548,18 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 zorder=100
             )
 
+        # cache min/max before modifying grid response in place
+        if self._config.show_colorbar:
+            max_response = self._grid.response.max().compute().values
+            min_response = self._grid.response.min().compute().values
+
+        # Keep only grid response values above threshold
+        # TODO: this is accessing private variables...
+        self._config.mask_less_than_threshold = 15
+        if self._config.mask_less_than_threshold is not None:
+            self._grid._response = self._grid.response.where(
+                self._grid.response >= self._config.mask_less_than_threshold)
+
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
             self._grid.latitude,
@@ -560,9 +572,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             cmap=self._config.netcdf_var_cmap_on_plot)
 
         if self._config.show_colorbar:
-            # set the min and max for the colorbar
-            max_response = self._grid.response.max().compute().values
-            min_response = self._grid.response.min().compute().values
+            print("Showing colorbar...")
             self._mesh.set_clim((min_response, max_response))
 
             # describe colorbar location
