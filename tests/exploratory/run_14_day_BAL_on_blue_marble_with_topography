@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+colorbar="${1:-no-show-colorbar}"
+alpha="${2:-0.40}"
+debug="$3"
+annotation="$4"
+if [[ $debug -eq 1 ]]
+then
+    pdb="-m pdb"
+fi
+
+dirname=tmp-BAL-alpha-$alpha-ndays-14-$colorbar-$annotation
+[[ -d $dirname ]] && rm -rf $dirname
+[[ ! -d $dirname ]] && mkdir $dirname
+python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
+    $dirname \
+    --save-animation\
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/BAL_202212*\
+    --alpha "$alpha"\
+    --show-timestamp\
+    --time-delta-in-hours-between-consecutive-files 6 \
+    --timestamp-x-pos 0.942 --timestamp-y-pos 0.975 \
+    --blue-marble-path ~/.cartopy_backgrounds/three-globe-earth-blue-marble.jpg \
+    --cmap bwr \
+    --"$colorbar" \
+    --level-ix 10\
+    --mask-threshold-abs-value 15\
+    --concat-dim time 

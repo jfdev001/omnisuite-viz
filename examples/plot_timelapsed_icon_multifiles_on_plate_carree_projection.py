@@ -567,9 +567,10 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             )
 
         # cache min/max before modifying grid response in place
-        if self._config.show_colorbar:
-            max_response = self._grid.response.max().compute().values
-            min_response = self._grid.response.min().compute().values
+        # NOTE: inefficient?? only used in cbar??
+        # if self._config.show_colorbar:
+        max_response = self._grid.response.max().compute().values
+        min_response = self._grid.response.min().compute().values
 
         # Keep only grid response values above threshold
         # TODO: this is accessing private variables...
@@ -593,9 +594,10 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             alpha=self._config.netcdf_var_transparency_on_plot,
             cmap=self._config.netcdf_var_cmap_on_plot)
 
+        self._mesh.set_clim((min_response, max_response))
+
         if self._config.show_colorbar:
             print("Showing colorbar...")
-            self._mesh.set_clim((min_response, max_response))
 
             # describe colorbar location
             cax = inset_axes(
