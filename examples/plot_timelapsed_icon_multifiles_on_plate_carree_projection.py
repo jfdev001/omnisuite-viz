@@ -568,6 +568,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
         # cache min/max before modifying grid response in place
         # NOTE: inefficient?? only used in cbar??
+        # TODO: is this necssary???
         # if self._config.show_colorbar:
         max_response = self._grid.response.max().compute().values
         min_response = self._grid.response.min().compute().values
@@ -583,18 +584,23 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             )
             self._grid._response = self._grid.response.where(leq_geq_mask)
 
+        response_at_time: ndarray = self._grid.response.isel(
+            time=t0).compute().values
         self._mesh = self._ax.pcolormesh(
             self._grid.longitude,
             self._grid.latitude,
-            self._grid.response.isel(time=t0).compute().values,
+            response_at_time,
             # TODO: could make zorder a part of configure...
-            zorder=10,  # must have for data plotted "on top of" blue marble
+            zorder=2,  # must have for data plotted "on top of" blue marble
             antialiased=True,
             transform=self._config.transform,
             alpha=self._config.netcdf_var_transparency_on_plot,
             cmap=self._config.netcdf_var_cmap_on_plot)
 
-        self._mesh.set_clim((min_response, max_response))
+        # TODO: put conditional: if colormap.... or dont bother  setting
+        # this since set by c olorbar vmin???... maybe take better percentile
+        # here... e.g., 5 and 95th percentiles across all data...
+        self._mesh.set_clim((response_at_time.min(), response_at_time.max()))
 
         if self._config.show_colorbar:
             print("Showing colorbar...")
@@ -608,7 +614,10 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 borderpad=4  # keep colorbar from "falling off" image
             )
 
-            self._fig.colorbar(
+            # NOTE: colorbar will be based only on first value of mesh
+            # and would otherwise change every time mesh gets updated????
+            # TODO: check this...
+            self.colorbar = self._fig.colorbar(
                 self._mesh,
                 ax=self._ax,
                 cax=cax,
@@ -625,10 +634,18 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
         # Update frame with the value of the response variable at next
         # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
-        response_at_time = self._grid.response.isel(
+        response_at_time: ndarray = self._grid.response.isel(
             time=frame).compute().values
 
         self._mesh.set_array(response_at_time)
+
+        # TODO: dynamically setting clim...
+        # TODO: does it make sense to set this or just rely on the first color
+        # map that gets set in the first frame...if i set vmin based on
+        # max then most of the values actually get to be too light... so i think
+        # i need to have a more careful normalization... or do something else
+        # self._mesh.set_clim(response_at_time.min(), response_at_time.max())
+
         return
 
 
