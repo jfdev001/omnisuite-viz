@@ -566,9 +566,9 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 zorder=100
             )
 
-        # cache min/max response before modifying grid response in place
-        max_response = self._grid.response.max().compute().values
-        min_response = self._grid.response.min().compute().values
+        # cache response quantiles before modifying grid response in place
+        # TODO: make arguments to script or allow provision of particular
+        # vmin/vmax
         response_95th_quantile = self._grid.response.quantile(
             0.95).compute().values
         response_5th_quantile = self._grid.response.quantile(

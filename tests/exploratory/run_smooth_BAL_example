@@ -1,6 +1,4 @@
 #!/usr/bin/bash
-# @brief Reproduce smooth gravity wave plotting.... the issue
-#        appears to be with the time dimension concatenation....possibly
 alpha="${1:-0.30}"
 debug="$2"
 annotation="$3"
@@ -9,13 +7,13 @@ then
     pdb="-m pdb"
 fi
 
-dirname=tmp-gravity-wave-alpha-$alpha-ndays-smooth-$annotation
+dirname=tmp-BAL-alpha-$alpha-ndays-smooth-$annotation
 [[ -d $dirname ]] && rm -rf $dirname
 [[ ! -d $dirname ]] && mkdir $dirname
 python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
     $dirname \
     --save-animation\
-    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*005* /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*006*\
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/BAL_202212*005* /work/bm1233/m300685/UAICON/modes/inverse/BAL_202212*006*\
     --alpha "$alpha"\
     --no-show-timestamp\
     --time-delta-in-hours-between-consecutive-files 6 \
