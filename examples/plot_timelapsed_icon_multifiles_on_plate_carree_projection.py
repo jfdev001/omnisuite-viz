@@ -551,9 +551,9 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             # TODO: could make zorder a part of configure...
             zorder=0,)
 
-        # Overlay the image of the Earth with your data of interest
         t0 = 0
 
+        # Initialize the timestamp lable
         if self._config.frame_to_new_timestamp is not None:
             self.textbox = self._ax.text(
                 self._config.timestamp_x_pos, self._config.timestamp_y_pos,
@@ -566,12 +566,13 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 zorder=100
             )
 
-        # cache min/max before modifying grid response in place
-        # NOTE: inefficient?? only used in cbar??
-        # TODO: is this necssary???
-        # if self._config.show_colorbar:
+        # cache min/max response before modifying grid response in place
         max_response = self._grid.response.max().compute().values
         min_response = self._grid.response.min().compute().values
+        response_95th_quantile = self._grid.response.quantile(
+            0.95).compute().values
+        response_5th_quantile = self._grid.response.quantile(
+            0.05).compute().values
 
         # Keep only grid response values above threshold
         # TODO: this is accessing private variables...
@@ -584,6 +585,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             )
             self._grid._response = self._grid.response.where(leq_geq_mask)
 
+        # overlay the data on the blue marble
         response_at_time: ndarray = self._grid.response.isel(
             time=t0).compute().values
         self._mesh = self._ax.pcolormesh(
@@ -597,10 +599,15 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             alpha=self._config.netcdf_var_transparency_on_plot,
             cmap=self._config.netcdf_var_cmap_on_plot)
 
-        # TODO: put conditional: if colormap.... or dont bother  setting
-        # this since set by c olorbar vmin???... maybe take better percentile
-        # here... e.g., 5 and 95th percentiles across all data...
-        self._mesh.set_clim((response_at_time.min(), response_at_time.max()))
+        # self._mesh.set_clim((response_at_time.min(), response_at_time.max()))
+        # TODO: should use global max/min here... but then brighten colors
+        # somehow... this is currently dimming the outputs it seems... maybe
+        # better to use 95% percentile or something... and what about cmap
+        # extend??? in the areas with really high or low velocity, will info
+        # be lost??
+        # self._mesh.set_clim(min_response, max_response)
+
+        self._mesh.set_clim(response_5th_quantile, response_95th_quantile)
 
         if self._config.show_colorbar:
             print("Showing colorbar...")
@@ -614,9 +621,6 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 borderpad=4  # keep colorbar from "falling off" image
             )
 
-            # NOTE: colorbar will be based only on first value of mesh
-            # and would otherwise change every time mesh gets updated????
-            # TODO: check this...
             self.colorbar = self._fig.colorbar(
                 self._mesh,
                 ax=self._ax,
@@ -624,7 +628,8 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 label=f"{self._config.netcdf_response_var_short_name}"
                 f" ({self._config.netcdf_response_var_units})",
                 orientation="horizontal",
-                location="bottom")
+                location="bottom",
+                extend="both")
 
         return
 
@@ -638,13 +643,6 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             time=frame).compute().values
 
         self._mesh.set_array(response_at_time)
-
-        # TODO: dynamically setting clim...
-        # TODO: does it make sense to set this or just rely on the first color
-        # map that gets set in the first frame...if i set vmin based on
-        # max then most of the values actually get to be too light... so i think
-        # i need to have a more careful normalization... or do something else
-        # self._mesh.set_clim(response_at_time.min(), response_at_time.max())
 
         return
 

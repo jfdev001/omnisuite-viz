@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 # @brief Reproduce smooth gravity wave plotting.... the issue
 #        appears to be with the time dimension concatenation....possibly
-#        a clim issue..
 alpha="${1:-0.30}"
 debug="$2"
 annotation="$3"
@@ -21,8 +20,8 @@ python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projectio
     --no-show-timestamp\
     --time-delta-in-hours-between-consecutive-files 6 \
     --timestamp-x-pos 0.942 --timestamp-y-pos 0.975 \
-    --blue-marble-path ~/.cartopy_backgrounds/BlueMarble_3600x1800.png \
+    --blue-marble-path ~/.cartopy_backgrounds/three-globe-earth-blue-marble.jpg \
     --cmap bwr \
     --show-colorbar \
-    --level-ix 72 
-    # --concat-dim time
+    --level-ix 72 \
+    --concat-dim time
