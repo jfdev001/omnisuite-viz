@@ -65,7 +65,6 @@ def main():
     blue_marble_path: str = args.blue_marble_path
 
     concat_dim: str = args.concat_dim
-    chunks: int = args.chunks
 
     show_timestamp: bool = args.show_timestamp
     time_delta_in_hours_between_consecutive_files: int = (
@@ -77,13 +76,7 @@ def main():
 
     mask_threshold_abs_value: float = args.mask_threshold_abs_value
 
-    # post process args
-    use_level_ix: bool = args.use_level_ix
     level_ix: int = args.level_ix
-    min_vertical_layer_height_in_meters: float = (
-        args.min_vertical_layer_height_in_meters)
-    max_vertical_layer_height_in_meters: float = (
-        args.max_vertical_layer_height_in_meters)
     # -- end parse cli --
 
     # read netcdf data, the blue marble image, and post process
@@ -91,19 +84,13 @@ def main():
         netcdf_response_var_file_path=netcdf_response_var_file_path,
         netcdf_response_var_short_name=netcdf_response_var_short_name,
         blue_marble_path=blue_marble_path,
-        use_level_ix=use_level_ix,
 
         concat_dim=concat_dim,
-        chunks=chunks,
 
         show_timestamp=show_timestamp,
         time_delta_in_hours_between_consecutive_files=time_delta_in_hours_between_consecutive_files,
 
-        level_ix=level_ix,
-        min_vertical_layer_height_in_meters=(
-            min_vertical_layer_height_in_meters),
-        max_vertical_layer_height_in_meters=(
-            max_vertical_layer_height_in_meters))
+        level_ix=level_ix)
 
     print("Reading data...")
     start_read = time_in_seconds()
@@ -226,17 +213,6 @@ def cli():
         " to the actual output interval, the concatenation over the"
         " time axis will still occur correctly)")
 
-    read_group.add_argument("--chunks", type=int, default=None)
-
-    read_group.add_argument(
-        "--use-level-ix",
-        help="flag to use --level-ix directly if true, otherwise"
-        " compute an average of response variable over some region of the"
-        " atmosphere defined by --min-vertical-layer-height-in-meters"
-        " and --max-vertical-layer-height-in-meters.",
-        action=BooleanOptionalAction,
-        default=True)
-
     default_level_ix = 72  # based on conversation with P. Ghosh
     read_group.add_argument(
         "--level-ix",
@@ -246,27 +222,9 @@ def cli():
         default=default_level_ix
     )
 
-    default_min_vertical_layer_height_in_meters = (
-        ICONConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS)
-    read_group.add_argument(
-        "--min-vertical-layer-height-in-meters",
-        type=float,
-        help="The lower bound in meters of the layer you wish to plot."
-        f" (default: {default_min_vertical_layer_height_in_meters})",
-        default=default_min_vertical_layer_height_in_meters)
-
-    default_max_vertical_layer_height_in_meters = (
-        ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)
-    read_group.add_argument(
-        "--max-vertical-layer-height-in-meters",
-        type=float,
-        help="The upper bound in meters of the layer you wish to plot."
-        f" (default: {default_max_vertical_layer_height_in_meters})",
-        default=default_max_vertical_layer_height_in_meters)
-
     try:
         default_blue_marble_path = Path(
-            f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+            "assets/world.topo.bathy.200412.3x5400x2700.jpg")
         blue_marble_required = False
     except KeyError:
         default_blue_marble_path = None
@@ -379,9 +337,7 @@ class ICONMultifileDataReader(AbstractReader):
         netcdf_response_var_file_path: str,
         netcdf_response_var_short_name: str,
         blue_marble_path: str,
-        use_level_ix: bool,
         concat_dim: str = None,
-        chunks: str = None,
 
         show_timestamp: bool = False,
         time_delta_in_hours_between_consecutive_files: int = 6,
@@ -398,10 +354,8 @@ class ICONMultifileDataReader(AbstractReader):
         self.netcdf_response_var_short_name = (
             netcdf_response_var_short_name)
         self.blue_marble_path = blue_marble_path
-        self.use_level_ix = use_level_ix
 
         self.concat_dim = concat_dim
-        self.chunks = chunks
 
         self.time_delta_in_hours_between_consecutive_files = (
             time_delta_in_hours_between_consecutive_files)
@@ -410,10 +364,6 @@ class ICONMultifileDataReader(AbstractReader):
         self.level_name = level_name
 
         self.level_ix = level_ix
-        self.min_vertical_layer_height_in_meters = (
-            min_vertical_layer_height_in_meters)
-        self.max_vertical_layer_height_in_meters = (
-            max_vertical_layer_height_in_meters)
 
         # Initialize read variables
         self.mfdataset = None
@@ -444,7 +394,6 @@ class ICONMultifileDataReader(AbstractReader):
             self.netcdf_response_var_file_path,
             drop_variables=data_vars_to_drop,
             concat_dim=self.concat_dim,
-            chunks=self.chunks,
             combine="nested" if self.concat_dim is not None else "by_coords")
 
         self.response: xarr.DataArray = (
@@ -469,14 +418,7 @@ class ICONMultifileDataReader(AbstractReader):
         return
 
     def postprocess(self):
-        if self.use_level_ix:
-            self.response = self.response.isel(
-                {self.level_name: self.level_ix})
-        else:
-            raise NotImplementedError(
-                " sigma = pressure/surface_pressure = P/P0, so you can get"
-                " geometric height z using scale height z = H*ln(P0/P)"
-                " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
+        self.response = self.response.isel({self.level_name: self.level_ix})
 
         if self.show_timestamp:
             time = self.mfdataset["time"].compute().values

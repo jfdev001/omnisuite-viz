@@ -9,12 +9,16 @@
 **/*.tar*
 **/*.*zip*
 
+
 # ignore plots
 *plot*/
 **/*.PNG
 **/*.png
 **/*.JPEG
 **/*.jpg
+
+# Allow blue marble 
+!assets/world.topo.bathy.200412.3x5400x2700.jpg
 
 # ignore temp directories 
 tmp*/

@@ -20,7 +20,6 @@ python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projectio
     --no-show-timestamp\
     --time-delta-in-hours-between-consecutive-files 6 \
     --timestamp-x-pos 0.942 --timestamp-y-pos 0.975 \
-    --blue-marble-path ~/.cartopy_backgrounds/three-globe-earth-blue-marble.jpg \
     --cmap bwr \
     --no-show-colorbar \
     --level-ix 72 \
