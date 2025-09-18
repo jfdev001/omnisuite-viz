@@ -75,6 +75,10 @@ def main():
     show_colorbar: bool = args.show_colorbar
 
     level_ix: int = args.level_ix
+
+    vmin: float = args.vmin
+    vmax: float = args.vmax
+    use_quantile_for_clim: bool = args.use_quantile_for_clim
     # -- end parse cli --
 
     # read netcdf data, the blue marble image, and post process
@@ -137,6 +141,10 @@ def main():
     config.netcdf_response_var_units = reader.mfdataset[
         netcdf_response_var_short_name].attrs.get("units")
 
+    config.use_quantile_for_clim = use_quantile_for_clim
+    config.vmin = vmin
+    config.vmax = vmax
+
     # write the frames to disk
     animator = ICONModelAnimator(
         grid=grid, config=config, blue_marble_img=blue_marble_img)
@@ -151,22 +159,6 @@ def main():
 class ICONConfigConsts:
     LATITUDE_NETCDF_SHORT_VAR_NAME: ClassVar[str] = "lat"
     LONGITUDE_NETCDF_SHORT_VAR_NAME: ClassVar[str] = "lon"
-    GEOPOTENTIAL_HEIGHT_NETCDF_SHORT_VAR_NAME: ClassVar[str] = "Z"
-
-    TROPOSPHERE_BEGIN_HEIGHT_IN_METERS: ClassVar[float] = 0
-    TROPOSPHERE_END_HEIGHT_IN_METERS: ClassVar[float] = 10_000
-
-    # define expected dimensions
-    EXPECTED_LEV: ClassVar[int] = 512
-    EXPECTED_LAT_DIM: ClassVar[int] = 512
-    EXPECTED_LON_DIM: ClassVar[int] = 1024
-
-    # define axes
-    N_RESPONSE_AXES: ClassVar[int] = 4
-    RESPONSE_TIME_AXIS: ClassVar[int] = 0
-    RESPONSE_LEV_AXIS: ClassVar[int] = 1
-    RESPONSE_LAT_AXIS: ClassVar[int] = 2
-    RESPONSE_LON_AXIS: ClassVar[int] = 3
 
 
 def cli():
@@ -270,9 +262,6 @@ def cli():
         action=BooleanOptionalAction,
         default=False, )
 
-    # TODO: could add position information for where the timestamp could go
-    # e.g., x-y coordinates of this ...
-
     config_group.add_argument(
         "--time-delta-in-hours-between-consecutive-files",
         type=int,
@@ -287,8 +276,7 @@ def cli():
         type=float,
         help="relative x-position of timestamp."
         f" (default: {default_timestamp_x_pos})",
-        default=default_timestamp_x_pos
-    )
+        default=default_timestamp_x_pos)
 
     default_timestamp_y_pos = 0.975
     config_group.add_argument(
@@ -296,21 +284,57 @@ def cli():
         type=float,
         help="relative y-position of timestamp."
         f" (default: {default_timestamp_y_pos})",
-        default=default_timestamp_y_pos
-    )
+        default=default_timestamp_y_pos)
 
     config_group.add_argument(
         "--show-colorbar",
-        help=(
-            "Flag to show colorbar for the data (default: False)"),
+        help="Flag to show colorbar for the data (default: False)",
         action=BooleanOptionalAction,
         default=False,)
+
+    default_vmin = 0.05
+    config_group.add_argument(
+        "--vmin",
+        help="Quantile used to compute minimum value of response"
+        " variable data to plot if `--use-quantile-for-clim`, otherwise"
+        " this value is the exact minimum below which response data is not"
+        f"shown (default: {default_vmin})",
+        type=float,
+        default=default_vmin)
+
+    default_vmax = 0.95
+    config_group.add_argument(
+        "--vmax",
+        help="Quantile used to compute maximum value of response"
+        " variable data to plot if `--use-quantile-for-clim`, otherwise"
+        " this value is the exact maximum below which response data is not"
+        f" shown (default: {default_vmax})",
+        type=float,
+        default=default_vmax)
+
+    config_group.add_argument(
+        "--use-quantile-for-clim",
+        help="Flag to use `vmin` and `vmax` as quantiles for response variable"
+        " data used for the c(olor)lim(it)."
+        " Relying on quantiles initially is a solid default setting"
+        " then you can provide specific `vmin` and `vmax` later while"
+        " setting `--no-use-quantile-for-clim`. (default: True)",
+        action=BooleanOptionalAction,
+        default=True,)
 
     args = parser.parse_args()
 
     if (args.show_timestamp
             and args.time_delta_in_hours_between_consecutive_files is None):
         raise ValueError
+
+    if args.use_quantile_for_clim:
+        msg = (
+            "must provide vmin and vmax such that vmin in [0,1] and"
+            " vmax in [0,1] and vmin < vmax")
+        assert args.vmin < args.vmax, msg
+        assert args.vmin >= 0 and args.vmin <= 1, msg
+        assert args.vmax >= 0 and args.vmax <= 1, msg
 
     assert args.timestamp_x_pos >= 0 and args.timestamp_x_pos <= 1.0
     assert args.timestamp_y_pos >= 0 and args.timestamp_y_pos <= 1.0
@@ -321,21 +345,15 @@ class ICONMultifileDataReader(AbstractReader):
     """Read and postprocess multifile ICON data (e.g., gravity wave)."""
 
     def __init__(
-        self,
-        netcdf_response_var_file_path: str,
-        netcdf_response_var_short_name: str,
-        blue_marble_path: str,
-        concat_dim: str = None,
-
-        show_timestamp: bool = False,
-        time_delta_in_hours_between_consecutive_files: int = 6,
-
-        level_ix: int = 0,
-        level_name: str = "lev",
-        min_vertical_layer_height_in_meters: float = (
-            ICONConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS),
-        max_vertical_layer_height_in_meters: float = (
-            ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)):
+            self,
+            netcdf_response_var_file_path: str,
+            netcdf_response_var_short_name: str,
+            blue_marble_path: str,
+            concat_dim: str = None,
+            show_timestamp: bool = False,
+            time_delta_in_hours_between_consecutive_files: int = 6,
+            level_ix: int = 0,
+            level_name: str = "lev"):
 
         # TODO: keep public for now
         self.netcdf_response_var_file_path = netcdf_response_var_file_path
@@ -474,14 +492,51 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
     def _plot_initial_frame(self):
         # Plot an actual image of the Earth
+        zorder_blue_marble = 0
         self._ax.imshow(
             self._blue_marble_img,
             extent=self._config.blue_marble_extent,
             transform=self._config.transform,
-            # TODO: could make zorder a part of configure...
-            zorder=0,)
+            zorder=zorder_blue_marble,)
 
+        # overlay the initial data on the blue marble
+        # TODO: assumes there is a time field
         t0 = 0
+        response_at_time: ndarray = (
+            self._grid.response
+            .isel(time=t0)
+            .compute()
+            .values)
+
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            response_at_time,
+            zorder=zorder_blue_marble+1,
+            antialiased=True,
+            transform=self._config.transform,
+            alpha=self._config.netcdf_var_transparency_on_plot,
+            cmap=self._config.netcdf_var_cmap_on_plot)
+
+        # Set the color limits to emphasize a particular range of response
+        # varaible values
+        if self._config.use_quantile_for_clim:
+            response_clim_max = (
+                self._grid.response
+                .quantile(self._config.vmax)
+                .compute()
+                .values)
+
+            response_clim_min = (
+                self._grid.response
+                .quantile(self._config.vmin)
+                .compute()
+                .values)
+        else:
+            response_clim_max = self._config.vmax
+            response_clim_min = self._config.vmin
+
+        self._mesh.set_clim(response_clim_min, response_clim_max)
 
         # Initialize the timestamp lable
         if self._config.frame_to_new_timestamp is not None:
@@ -493,33 +548,9 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 bbox=dict(facecolor="white", edgecolor="black",
                           boxstyle="round,pad=0.5"),
                 transform=self._ax.transAxes,
-                zorder=100
-            )
+                zorder=zorder_blue_marble+100)
 
-        # cache response quantiles before modifying grid response in place
-        # TODO: make arguments to script or allow provision of particular
-        # vmin/vmax
-        response_95th_quantile = self._grid.response.quantile(
-            0.95).compute().values
-        response_5th_quantile = self._grid.response.quantile(
-            0.05).compute().values
-
-        # overlay the data on the blue marble
-        response_at_time: ndarray = self._grid.response.isel(
-            time=t0).compute().values
-        self._mesh = self._ax.pcolormesh(
-            self._grid.longitude,
-            self._grid.latitude,
-            response_at_time,
-            # TODO: could make zorder a part of configure...
-            zorder=2,  # must have for data plotted "on top of" blue marble
-            antialiased=True,
-            transform=self._config.transform,
-            alpha=self._config.netcdf_var_transparency_on_plot,
-            cmap=self._config.netcdf_var_cmap_on_plot)
-
-        self._mesh.set_clim(response_5th_quantile, response_95th_quantile)
-
+        # setup colorbar
         if self._config.show_colorbar:
             print("Showing colorbar...")
 
@@ -529,8 +560,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 width="35%",
                 height="2%",
                 loc="lower center",
-                borderpad=4  # keep colorbar from "falling off" image
-            )
+                borderpad=4)  # keep colorbar from "falling off" image
 
             self.colorbar = self._fig.colorbar(
                 self._mesh,
@@ -540,6 +570,7 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 f" ({self._config.netcdf_response_var_units})",
                 orientation="horizontal",
                 location="bottom",
+                # shows that values above the set limits do exist
                 extend="both")
 
         return
@@ -549,9 +580,12 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             self.textbox.set_text(self._config.frame_to_new_timestamp[frame])
 
         # Update frame with the value of the response variable at next
-        # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
-        response_at_time: ndarray = self._grid.response.isel(
-            time=frame).compute().values
+        # frame where frame == timestep (e.g., 12 timesteps ==> 12 frames)
+        response_at_time: ndarray = (
+            self._grid.response
+            .isel(time=frame)
+            .compute()
+            .values)
 
         self._mesh.set_array(response_at_time)
 
