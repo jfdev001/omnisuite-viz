@@ -74,8 +74,6 @@ def main():
 
     show_colorbar: bool = args.show_colorbar
 
-    mask_threshold_abs_value: float = args.mask_threshold_abs_value
-
     level_ix: int = args.level_ix
     # -- end parse cli --
 
@@ -138,8 +136,6 @@ def main():
     config.netcdf_response_var_short_name = netcdf_response_var_short_name
     config.netcdf_response_var_units = reader.mfdataset[
         netcdf_response_var_short_name].attrs.get("units")
-
-    config.mask_threshold_abs_value = mask_threshold_abs_value
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -309,14 +305,6 @@ def cli():
             "Flag to show colorbar for the data (default: False)"),
         action=BooleanOptionalAction,
         default=False,)
-
-    # TODO: could add a mask greater than threshold as well...
-    config_group.add_argument(
-        "--mask-threshold-abs-value",
-        help="response data above and below this value is not plotted."
-        " (default: None)",
-        type=float,
-        default=None)
 
     args = parser.parse_args()
 
@@ -516,17 +504,6 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
         response_5th_quantile = self._grid.response.quantile(
             0.05).compute().values
 
-        # Keep only grid response values above threshold
-        # TODO: this is accessing private variables...
-        if self._config.mask_threshold_abs_value is not None:
-            print("Masking data...")
-            response = self._grid.response
-            leq_geq_mask = (
-                (response >= abs(self._config.mask_threshold_abs_value)) |
-                (response <= -abs(self._config.mask_threshold_abs_value))
-            )
-            self._grid._response = self._grid.response.where(leq_geq_mask)
-
         # overlay the data on the blue marble
         response_at_time: ndarray = self._grid.response.isel(
             time=t0).compute().values
@@ -540,14 +517,6 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             transform=self._config.transform,
             alpha=self._config.netcdf_var_transparency_on_plot,
             cmap=self._config.netcdf_var_cmap_on_plot)
-
-        # self._mesh.set_clim((response_at_time.min(), response_at_time.max()))
-        # TODO: should use global max/min here... but then brighten colors
-        # somehow... this is currently dimming the outputs it seems... maybe
-        # better to use 95% percentile or something... and what about cmap
-        # extend??? in the areas with really high or low velocity, will info
-        # be lost??
-        # self._mesh.set_clim(min_response, max_response)
 
         self._mesh.set_clim(response_5th_quantile, response_95th_quantile)
 
