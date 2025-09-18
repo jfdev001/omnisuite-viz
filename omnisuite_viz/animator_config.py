@@ -17,7 +17,6 @@ class AnimatorConfig:
 
     path_to_save_animation: str = None
 
-
     INCH_PER_PIXEL: ClassVar[float] = 1 / rcParams['figure.dpi']
     formatted_file_name_per_frame: str = "frame_%d.png"
 
@@ -83,8 +82,8 @@ class NetcdfAnimatorConfig(OmniSuiteAnimatorConfig):
             "You can download an example NetCDF file from" +\
             " https://zenodo.org/records/15639060"
         assert exists(self.blue_marble_path), \
-            "You can download blue marble PNGs from" +\
-            "https://neo.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG"
+            "You can download blue marble images from" +\
+            "https://visibleearth.nasa.gov/collection/1484/blue-marble&sa=U&ved=2ahUKEwiMruannaD2AhXoc98KHY-sCyYQFnoECAIQAg&usg=AOvVaw3WqRlYaJe9q7HjupPUhgJ3?page=1"
         return
 
     def is_valid_netcdf_response_var_file_path(self):

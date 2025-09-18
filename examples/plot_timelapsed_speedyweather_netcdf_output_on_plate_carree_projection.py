@@ -67,7 +67,7 @@ def cli():
         f" (default: {default_netcdf_response_var_file_path})")
 
     default_blue_marble_path = Path(
-        f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+        "assets/world.topo.bathy.200412.3x5400x2700.jpg")
     parser.add_argument(
         "--blue-marble-path",
         type=str,

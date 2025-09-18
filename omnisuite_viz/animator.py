@@ -5,6 +5,9 @@ from os import listdir
 from os.path import join, getctime
 from PIL import Image
 from typing import List
+from subprocess import run
+from warnings import warn
+
 from tqdm import tqdm
 
 from omnisuite_viz.grid import Grid, LatLonGrid
@@ -112,12 +115,59 @@ class OmniSuiteWorldMapAnimator(Animator):
         return frames
 
     def _save_frames_as_animation(self, frames: List[Image.Image]):
-        frames[0].save(
-            self._config.path_to_save_animation,
-            save_all=True,
-            append_images=frames[1:],
-            loop=self._config.pil_image_gif_loop,
-            duration=self._config.pil_image_duration_between_frames_in_ms)
+        has_ffmpeg = run(
+            ["which", "ffmpeg"], capture_output=True).returncode == 0
+        if has_ffmpeg:
+            output_palettegen = run(
+                [
+                    "ffmpeg",
+                    "-loglevel",
+                    "fatal",
+                    "-i",
+                    # TODO: should use frame naming convention here instead...
+                    f"{self._config.output_dir}/frame_%d.png",
+                    "-vf",
+                    "palettegen",
+                    f"{self._config.output_dir}/palette.png"
+                ]
+            )
+            if output_palettegen.returncode != 0:
+                print(output_palettegen)
+                raise
+            output_gif_gen = run(
+                [
+                    "ffmpeg",
+                    "-framerate",
+                    "2",  # TODO: make configurable? not worth effot...
+                    "-loglevel",
+                    "fatal",
+                    "-i",
+                    f"{self._config.output_dir}/frame_%d.png",
+                    "-i",
+                    f"{self._config.output_dir}/palette.png",
+                    "-filter_complex",
+                    "paletteuse",
+                    f"{self._config.path_to_save_animation}"
+                ]
+            )
+            if output_gif_gen.returncode != 0:
+                print(output_gif_gen)
+                raise
+        else:
+            msg = (
+                "Using PIL by default to create animation may lead to"
+                " artifacts in the animation. Refer to the README.md"
+                " on installing `ffmpeg` as this is the preferred tool"
+                " for creating animations, or just go to"
+                "https://johnvansickle.com/ffmpeg/"
+            )
+            warn(message=msg)
+            frames[0].save(
+                self._config.path_to_save_animation,
+                save_all=True,
+                append_images=frames[1:],
+                loop=self._config.pil_image_gif_loop,
+                duration=self._config.pil_image_duration_between_frames_in_ms)
         return
 
     def _close_frames(self, frames: List[Image.Image]):

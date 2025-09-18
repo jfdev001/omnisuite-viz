@@ -65,7 +65,6 @@ def main():
     blue_marble_path: str = args.blue_marble_path
 
     concat_dim: str = args.concat_dim
-    chunks: int = args.chunks
 
     show_timestamp: bool = args.show_timestamp
     time_delta_in_hours_between_consecutive_files: int = (
@@ -75,15 +74,11 @@ def main():
 
     show_colorbar: bool = args.show_colorbar
 
-    mask_threshold_abs_value: float = args.mask_threshold_abs_value
-
-    # post process args
-    use_level_ix: bool = args.use_level_ix
     level_ix: int = args.level_ix
-    min_vertical_layer_height_in_meters: float = (
-        args.min_vertical_layer_height_in_meters)
-    max_vertical_layer_height_in_meters: float = (
-        args.max_vertical_layer_height_in_meters)
+
+    vmin: float = args.vmin
+    vmax: float = args.vmax
+    use_quantile_for_clim: bool = args.use_quantile_for_clim
     # -- end parse cli --
 
     # read netcdf data, the blue marble image, and post process
@@ -91,19 +86,13 @@ def main():
         netcdf_response_var_file_path=netcdf_response_var_file_path,
         netcdf_response_var_short_name=netcdf_response_var_short_name,
         blue_marble_path=blue_marble_path,
-        use_level_ix=use_level_ix,
 
         concat_dim=concat_dim,
-        chunks=chunks,
 
         show_timestamp=show_timestamp,
         time_delta_in_hours_between_consecutive_files=time_delta_in_hours_between_consecutive_files,
 
-        level_ix=level_ix,
-        min_vertical_layer_height_in_meters=(
-            min_vertical_layer_height_in_meters),
-        max_vertical_layer_height_in_meters=(
-            max_vertical_layer_height_in_meters))
+        level_ix=level_ix)
 
     print("Reading data...")
     start_read = time_in_seconds()
@@ -152,7 +141,9 @@ def main():
     config.netcdf_response_var_units = reader.mfdataset[
         netcdf_response_var_short_name].attrs.get("units")
 
-    config.mask_threshold_abs_value = mask_threshold_abs_value
+    config.use_quantile_for_clim = use_quantile_for_clim
+    config.vmin = vmin
+    config.vmax = vmax
 
     # write the frames to disk
     animator = ICONModelAnimator(
@@ -168,22 +159,6 @@ def main():
 class ICONConfigConsts:
     LATITUDE_NETCDF_SHORT_VAR_NAME: ClassVar[str] = "lat"
     LONGITUDE_NETCDF_SHORT_VAR_NAME: ClassVar[str] = "lon"
-    GEOPOTENTIAL_HEIGHT_NETCDF_SHORT_VAR_NAME: ClassVar[str] = "Z"
-
-    TROPOSPHERE_BEGIN_HEIGHT_IN_METERS: ClassVar[float] = 0
-    TROPOSPHERE_END_HEIGHT_IN_METERS: ClassVar[float] = 10_000
-
-    # define expected dimensions
-    EXPECTED_LEV: ClassVar[int] = 512
-    EXPECTED_LAT_DIM: ClassVar[int] = 512
-    EXPECTED_LON_DIM: ClassVar[int] = 1024
-
-    # define axes
-    N_RESPONSE_AXES: ClassVar[int] = 4
-    RESPONSE_TIME_AXIS: ClassVar[int] = 0
-    RESPONSE_LEV_AXIS: ClassVar[int] = 1
-    RESPONSE_LAT_AXIS: ClassVar[int] = 2
-    RESPONSE_LON_AXIS: ClassVar[int] = 3
 
 
 def cli():
@@ -226,17 +201,6 @@ def cli():
         " to the actual output interval, the concatenation over the"
         " time axis will still occur correctly)")
 
-    read_group.add_argument("--chunks", type=int, default=None)
-
-    read_group.add_argument(
-        "--use-level-ix",
-        help="flag to use --level-ix directly if true, otherwise"
-        " compute an average of response variable over some region of the"
-        " atmosphere defined by --min-vertical-layer-height-in-meters"
-        " and --max-vertical-layer-height-in-meters.",
-        action=BooleanOptionalAction,
-        default=True)
-
     default_level_ix = 72  # based on conversation with P. Ghosh
     read_group.add_argument(
         "--level-ix",
@@ -246,27 +210,9 @@ def cli():
         default=default_level_ix
     )
 
-    default_min_vertical_layer_height_in_meters = (
-        ICONConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS)
-    read_group.add_argument(
-        "--min-vertical-layer-height-in-meters",
-        type=float,
-        help="The lower bound in meters of the layer you wish to plot."
-        f" (default: {default_min_vertical_layer_height_in_meters})",
-        default=default_min_vertical_layer_height_in_meters)
-
-    default_max_vertical_layer_height_in_meters = (
-        ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)
-    read_group.add_argument(
-        "--max-vertical-layer-height-in-meters",
-        type=float,
-        help="The upper bound in meters of the layer you wish to plot."
-        f" (default: {default_max_vertical_layer_height_in_meters})",
-        default=default_max_vertical_layer_height_in_meters)
-
     try:
         default_blue_marble_path = Path(
-            f"{environ['HOME']}/.cartopy_backgrounds/BlueMarble_3600x1800.png")
+            "assets/world.topo.bathy.200412.3x5400x2700.jpg")
         blue_marble_required = False
     except KeyError:
         default_blue_marble_path = None
@@ -316,9 +262,6 @@ def cli():
         action=BooleanOptionalAction,
         default=False, )
 
-    # TODO: could add position information for where the timestamp could go
-    # e.g., x-y coordinates of this ...
-
     config_group.add_argument(
         "--time-delta-in-hours-between-consecutive-files",
         type=int,
@@ -333,8 +276,7 @@ def cli():
         type=float,
         help="relative x-position of timestamp."
         f" (default: {default_timestamp_x_pos})",
-        default=default_timestamp_x_pos
-    )
+        default=default_timestamp_x_pos)
 
     default_timestamp_y_pos = 0.975
     config_group.add_argument(
@@ -342,29 +284,57 @@ def cli():
         type=float,
         help="relative y-position of timestamp."
         f" (default: {default_timestamp_y_pos})",
-        default=default_timestamp_y_pos
-    )
+        default=default_timestamp_y_pos)
 
     config_group.add_argument(
         "--show-colorbar",
-        help=(
-            "Flag to show colorbar for the data (default: False)"),
+        help="Flag to show colorbar for the data (default: False)",
         action=BooleanOptionalAction,
         default=False,)
 
-    # TODO: could add a mask greater than threshold as well...
+    default_vmin = 0.05
     config_group.add_argument(
-        "--mask-threshold-abs-value",
-        help="response data above and below this value is not plotted."
-        " (default: None)",
+        "--vmin",
+        help="Quantile used to compute minimum value of response"
+        " variable data to plot if `--use-quantile-for-clim`, otherwise"
+        " this value is the exact minimum below which response data is not"
+        f"shown (default: {default_vmin})",
         type=float,
-        default=None)
+        default=default_vmin)
+
+    default_vmax = 0.95
+    config_group.add_argument(
+        "--vmax",
+        help="Quantile used to compute maximum value of response"
+        " variable data to plot if `--use-quantile-for-clim`, otherwise"
+        " this value is the exact maximum below which response data is not"
+        f" shown (default: {default_vmax})",
+        type=float,
+        default=default_vmax)
+
+    config_group.add_argument(
+        "--use-quantile-for-clim",
+        help="Flag to use `vmin` and `vmax` as quantiles for response variable"
+        " data used for the c(olor)lim(it)."
+        " Relying on quantiles initially is a solid default setting"
+        " then you can provide specific `vmin` and `vmax` later while"
+        " setting `--no-use-quantile-for-clim`. (default: True)",
+        action=BooleanOptionalAction,
+        default=True,)
 
     args = parser.parse_args()
 
     if (args.show_timestamp
             and args.time_delta_in_hours_between_consecutive_files is None):
         raise ValueError
+
+    if args.use_quantile_for_clim:
+        msg = (
+            "must provide vmin and vmax such that vmin in [0,1] and"
+            " vmax in [0,1] and vmin < vmax")
+        assert args.vmin < args.vmax, msg
+        assert args.vmin >= 0 and args.vmin <= 1, msg
+        assert args.vmax >= 0 and args.vmax <= 1, msg
 
     assert args.timestamp_x_pos >= 0 and args.timestamp_x_pos <= 1.0
     assert args.timestamp_y_pos >= 0 and args.timestamp_y_pos <= 1.0
@@ -375,33 +345,23 @@ class ICONMultifileDataReader(AbstractReader):
     """Read and postprocess multifile ICON data (e.g., gravity wave)."""
 
     def __init__(
-        self,
-        netcdf_response_var_file_path: str,
-        netcdf_response_var_short_name: str,
-        blue_marble_path: str,
-        use_level_ix: bool,
-        concat_dim: str = None,
-        chunks: str = None,
-
-        show_timestamp: bool = False,
-        time_delta_in_hours_between_consecutive_files: int = 6,
-
-        level_ix: int = 0,
-        level_name: str = "lev",
-        min_vertical_layer_height_in_meters: float = (
-            ICONConfigConsts.TROPOSPHERE_BEGIN_HEIGHT_IN_METERS),
-        max_vertical_layer_height_in_meters: float = (
-            ICONConfigConsts.TROPOSPHERE_END_HEIGHT_IN_METERS)):
+            self,
+            netcdf_response_var_file_path: str,
+            netcdf_response_var_short_name: str,
+            blue_marble_path: str,
+            concat_dim: str = None,
+            show_timestamp: bool = False,
+            time_delta_in_hours_between_consecutive_files: int = 6,
+            level_ix: int = 0,
+            level_name: str = "lev"):
 
         # TODO: keep public for now
         self.netcdf_response_var_file_path = netcdf_response_var_file_path
         self.netcdf_response_var_short_name = (
             netcdf_response_var_short_name)
         self.blue_marble_path = blue_marble_path
-        self.use_level_ix = use_level_ix
 
         self.concat_dim = concat_dim
-        self.chunks = chunks
 
         self.time_delta_in_hours_between_consecutive_files = (
             time_delta_in_hours_between_consecutive_files)
@@ -410,10 +370,6 @@ class ICONMultifileDataReader(AbstractReader):
         self.level_name = level_name
 
         self.level_ix = level_ix
-        self.min_vertical_layer_height_in_meters = (
-            min_vertical_layer_height_in_meters)
-        self.max_vertical_layer_height_in_meters = (
-            max_vertical_layer_height_in_meters)
 
         # Initialize read variables
         self.mfdataset = None
@@ -444,7 +400,6 @@ class ICONMultifileDataReader(AbstractReader):
             self.netcdf_response_var_file_path,
             drop_variables=data_vars_to_drop,
             concat_dim=self.concat_dim,
-            chunks=self.chunks,
             combine="nested" if self.concat_dim is not None else "by_coords")
 
         self.response: xarr.DataArray = (
@@ -469,14 +424,7 @@ class ICONMultifileDataReader(AbstractReader):
         return
 
     def postprocess(self):
-        if self.use_level_ix:
-            self.response = self.response.isel(
-                {self.level_name: self.level_ix})
-        else:
-            raise NotImplementedError(
-                " sigma = pressure/surface_pressure = P/P0, so you can get"
-                " geometric height z using scale height z = H*ln(P0/P)"
-                " https://github.com/jfdev001/omnisuite-viz/issues/33#issuecomment-3052705623")
+        self.response = self.response.isel({self.level_name: self.level_ix})
 
         if self.show_timestamp:
             time = self.mfdataset["time"].compute().values
@@ -544,16 +492,53 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
 
     def _plot_initial_frame(self):
         # Plot an actual image of the Earth
+        zorder_blue_marble = 0
         self._ax.imshow(
             self._blue_marble_img,
             extent=self._config.blue_marble_extent,
             transform=self._config.transform,
-            # TODO: could make zorder a part of configure...
-            zorder=0,)
+            zorder=zorder_blue_marble,)
 
-        # Overlay the image of the Earth with your data of interest
+        # overlay the initial data on the blue marble
+        # TODO: assumes there is a time field
         t0 = 0
+        response_at_time: ndarray = (
+            self._grid.response
+            .isel(time=t0)
+            .compute()
+            .values)
 
+        self._mesh = self._ax.pcolormesh(
+            self._grid.longitude,
+            self._grid.latitude,
+            response_at_time,
+            zorder=zorder_blue_marble+1,
+            antialiased=True,
+            transform=self._config.transform,
+            alpha=self._config.netcdf_var_transparency_on_plot,
+            cmap=self._config.netcdf_var_cmap_on_plot)
+
+        # Set the color limits to emphasize a particular range of response
+        # varaible values
+        if self._config.use_quantile_for_clim:
+            response_clim_max = (
+                self._grid.response
+                .quantile(self._config.vmax)
+                .compute()
+                .values)
+
+            response_clim_min = (
+                self._grid.response
+                .quantile(self._config.vmin)
+                .compute()
+                .values)
+        else:
+            response_clim_max = self._config.vmax
+            response_clim_min = self._config.vmin
+
+        self._mesh.set_clim(response_clim_min, response_clim_max)
+
+        # Initialize the timestamp lable
         if self._config.frame_to_new_timestamp is not None:
             self.textbox = self._ax.text(
                 self._config.timestamp_x_pos, self._config.timestamp_y_pos,
@@ -563,39 +548,9 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 bbox=dict(facecolor="white", edgecolor="black",
                           boxstyle="round,pad=0.5"),
                 transform=self._ax.transAxes,
-                zorder=100
-            )
+                zorder=zorder_blue_marble+100)
 
-        # cache min/max before modifying grid response in place
-        # NOTE: inefficient?? only used in cbar??
-        # if self._config.show_colorbar:
-        max_response = self._grid.response.max().compute().values
-        min_response = self._grid.response.min().compute().values
-
-        # Keep only grid response values above threshold
-        # TODO: this is accessing private variables...
-        if self._config.mask_threshold_abs_value is not None:
-            print("Masking data...")
-            response = self._grid.response
-            leq_geq_mask = (
-                (response >= abs(self._config.mask_threshold_abs_value)) |
-                (response <= -abs(self._config.mask_threshold_abs_value))
-            )
-            self._grid._response = self._grid.response.where(leq_geq_mask)
-
-        self._mesh = self._ax.pcolormesh(
-            self._grid.longitude,
-            self._grid.latitude,
-            self._grid.response.isel(time=t0).compute().values,
-            # TODO: could make zorder a part of configure...
-            zorder=10,  # must have for data plotted "on top of" blue marble
-            antialiased=True,
-            transform=self._config.transform,
-            alpha=self._config.netcdf_var_transparency_on_plot,
-            cmap=self._config.netcdf_var_cmap_on_plot)
-
-        self._mesh.set_clim((min_response, max_response))
-
+        # setup colorbar
         if self._config.show_colorbar:
             print("Showing colorbar...")
 
@@ -605,17 +560,18 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
                 width="35%",
                 height="2%",
                 loc="lower center",
-                borderpad=4  # keep colorbar from "falling off" image
-            )
+                borderpad=4)  # keep colorbar from "falling off" image
 
-            self._fig.colorbar(
+            self.colorbar = self._fig.colorbar(
                 self._mesh,
                 ax=self._ax,
                 cax=cax,
                 label=f"{self._config.netcdf_response_var_short_name}"
                 f" ({self._config.netcdf_response_var_units})",
                 orientation="horizontal",
-                location="bottom")
+                location="bottom",
+                # shows that values above the set limits do exist
+                extend="both")
 
         return
 
@@ -624,11 +580,15 @@ class ICONModelAnimator(OmniSuiteWorldMapAnimator):
             self.textbox.set_text(self._config.frame_to_new_timestamp[frame])
 
         # Update frame with the value of the response variable at next
-        # frame where frame == timestep (e.g., 12 timesteps, 12 frames)
-        response_at_time = self._grid.response.isel(
-            time=frame).compute().values
+        # frame where frame == timestep (e.g., 12 timesteps ==> 12 frames)
+        response_at_time: ndarray = (
+            self._grid.response
+            .isel(time=frame)
+            .compute()
+            .values)
 
         self._mesh.set_array(response_at_time)
+
         return
 
 

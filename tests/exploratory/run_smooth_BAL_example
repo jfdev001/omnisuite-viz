@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-alpha="${1:-0.40}"
+alpha="${1:-0.30}"
 debug="$2"
 annotation="$3"
 if [[ $debug -eq 1 ]]
@@ -7,19 +7,18 @@ then
     pdb="-m pdb"
 fi
 
-dirname=tmp-gravity-wave-$alpha-artistic-bluemarble-$annotation
+dirname=tmp-BAL-alpha-$alpha-ndays-smooth-$annotation
 [[ -d $dirname ]] && rm -rf $dirname
 [[ ! -d $dirname ]] && mkdir $dirname
 python ${pdb} examples/plot_timelapsed_icon_multifiles_on_plate_carree_projection.py\
     $dirname \
     --save-animation\
-    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*0053.nc  /work/bm1233/m300685/UAICON/modes/inverse/GWS_202212*0054.nc \
+    --netcdf-response-var-file-path /work/bm1233/m300685/UAICON/modes/inverse/BAL_202212*005* /work/bm1233/m300685/UAICON/modes/inverse/BAL_202212*006*\
     --alpha "$alpha"\
-    --show-timestamp\
+    --no-show-timestamp\
     --time-delta-in-hours-between-consecutive-files 6 \
     --timestamp-x-pos 0.942 --timestamp-y-pos 0.975 \
     --cmap bwr \
-    --show-colorbar \
-    --level-ix 10\
-    --vmax 1.0\
-    --vmin 0.0
+    --no-show-colorbar \
+    --level-ix 72 \
+    --concat-dim time
