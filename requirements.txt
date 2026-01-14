@@ -3,7 +3,7 @@ cdo
 dask
 matplotlib
 netCDF4
-noise # perlin noise: https://pypi.org/project/noise/, requires C++ build tools on windows
+noise; platform_system == 'Linux' # perlin noise: https://pypi.org/project/noise/, requires C++ build tools on windows
 numpy
 Pillow
 tqdm
