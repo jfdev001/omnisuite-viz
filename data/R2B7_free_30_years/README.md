@@ -182,10 +182,25 @@ Note, you should use a URL and not something that begins with `git@github.com`.
 
 
 You can install the necessary packages for a repository by either using
-`pip` and a `.venv` OR you can just use `conda`. To use `conda`, do the following:
+`pip` and a `.venv` OR you can just use `conda`. 
+
+To use `pip` to install packages via a `requirements.txt` file, do the following:
+
+```shell
+pip install -r requirements.txt
+```
+
+To use `conda` to install packages via `requirements.txt` file, do the following:
 
 ```shell
 conda install --yes --file requirements.txt
+```
+
+You could always install individual packages by calling one of the following:
+
+```shell
+pip install <package-name-here>
+conda install <package-name-here>
 ```
 
 You can interactively inspect what's going on in a Python file by using the
