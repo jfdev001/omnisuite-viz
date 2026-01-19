@@ -159,6 +159,8 @@ you can look at the code in
 [icon-visualization-examples/scripts/basic_monthly_zonal_wind_contour.py](https://github.com/jfdev001/icon-visualization-examples/blob/main/scripts/basic_monthly_zonal_wind_contour.py). Follow the installation instructions at 
 [icon-visualization-examples/README.md](https://github.com/jfdev001/icon-visualization-examples/tree/main).
 
+Alternatively, you could use `ncview` (installed on WSL) or Panoply to inspect NetCDF files without having to do any coding.
+
 With a grasp of some basic plotting functionality in Python, you can then
 think about how to create some animations for OmniGlobe. An example that 
 generates 12 frames (one for each month) using the zonal wind data is 
@@ -166,7 +168,7 @@ available at [omnisuite_examples/examples/plot_timelapsed_icon_r2b7_netcdf_outpu
 
 Can you generate some animations using the temperature data instead? Can you
 upload one of these frames (or all or a subset of them) into the OmniSuite
-material editor?  
+material editor? If you don't know about OmniSuite yet, don't worry about this step.
 
 # Some Miscellaneous Notes
 
