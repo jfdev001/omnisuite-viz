@@ -6,6 +6,8 @@ name: CI
 on:
   pull_request:
     branches: [ "main" ]
+    paths:
+      - omnisuite_viz/*.py
 
 permissions:
   contents: read
