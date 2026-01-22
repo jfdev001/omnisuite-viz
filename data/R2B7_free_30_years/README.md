@@ -128,7 +128,8 @@ If you use `ncdump`, then you can call
 ```shell
 ncdump -h PATH_TO_FILE_HERE
 ```
-to get an overview of the variables (see also [`ncdump -h` documentation](https://www.unidata.ucar.edu/software/netcdf/workshops/2009/utilities/NcdumpHeader.html).
+to get an overview of the variables (see also [`ncdump -h`
+documentation](https://www.unidata.ucar.edu/software/netcdf/workshops/2009/utilities/NcdumpHeader.html)).
 
 You could inspect the NetCDF data with Python
 
@@ -159,7 +160,10 @@ you can look at the code in
 [icon-visualization-examples/scripts/basic_monthly_zonal_wind_contour.py](https://github.com/jfdev001/icon-visualization-examples/blob/main/scripts/basic_monthly_zonal_wind_contour.py). Follow the installation instructions at 
 [icon-visualization-examples/README.md](https://github.com/jfdev001/icon-visualization-examples/tree/main).
 
-Alternatively, you could use `ncview` (installed on WSL) or Panoply to inspect NetCDF files without having to do any coding.
+Alternatively, you could use `ncview` (installed on WSL, this is the little
+penguin icon) or Panoply (this is on your desktop and must be "right clicked"
+and run as an admin to work) to inspect NetCDF files without having to do any
+coding.
 
 With a grasp of some basic plotting functionality in Python, you can then
 think about how to create some animations for OmniGlobe. An example that 
@@ -169,6 +173,57 @@ available at [omnisuite_examples/examples/plot_timelapsed_icon_r2b7_netcdf_outpu
 Can you generate some animations using the temperature data instead? Can you
 upload one of these frames (or all or a subset of them) into the OmniSuite
 material editor? If you don't know about OmniSuite yet, don't worry about this step.
+
+# Windows Subsystem for Linux (WSL) and Bash 
+
+The WSL (assuming it's installed) can be launched with the penguin icon that is
+pinned to the taskbar on your windows machine. WSL launches as a terminal 
+(also called a command line), which is a simple interface that you can use 
+to interact "directly" with the Linux operating system.
+
+You can use programs like `python`, `ncview`, and `ncdump` in the terminal.
+When using those programs, make sure that you are in the correct directory 
+(aka folder). 
+
+Bash is a programming language that can be used to interact directrly with the
+Linux operating through the terminal. The following are some useful bash
+commands: 
+
+You can list the contents of the current directory by typing 
+
+```shell
+ls
+```
+
+You can print your current directory by typing 
+
+```shell 
+pwd
+```
+
+You can change directories by typing 
+
+```shell
+cd PUT_SOME_DIRECTORY_HERE
+```
+
+If you do not provide any arguments to `cd`, then by default you will change
+to your home directory (i.e., something similar to `/home/ls01`).
+
+You can inspect how to use any bash command by typing
+
+```shell 
+man BASH_COMMAND
+```
+
+like for example
+
+```
+man ls
+```
+
+For more bash commands, see [Bash cheat
+sheet](https://github.com/sudheerj/Linux-cheat-sheet?tab=readme-ov-file#file-and-directory-commands).
 
 # Some Miscellaneous Notes
 
