@@ -174,6 +174,59 @@ Can you generate some animations using the temperature data instead? Can you
 upload one of these frames (or all or a subset of them) into the OmniSuite
 material editor? If you don't know about OmniSuite yet, don't worry about this step.
 
+The previous dataset you inspected was an average of temperature or zonal wind
+over a ten year period for each of the twelve months. You may also inspect 
+zonal wind data at a higher temporal resolution by inspecting the files in
+`~/AA_intern/climate_datasets/UAICON/remapped`. Higher temporal resolution means
+that the scale of the time is in hours instead of in years. There are two types
+of files in the `remapped` directory: `GWS` and `BAL`. `GWS` standard for 
+gravity waves. `BAL` standards for balanced modes. These files essentially
+contain zonal wind data, though the balanced data has been "smoothed". The
+files are thus named according to the following formula:
+
+```
+<DATA TYPE>_<YEAR><MONTH><DAY>00000<##>.nc
+```
+
+where `<DATA TYPE>` is `GWS` or `BAL` and `##` is some arbitrary numbering.
+There are 6 hours in between consecutively numbered files. So if you visualize
+
+```
+# Data at 00:00 (midnight) on 1 December 2022 
+GWS_202212010000053.nc
+```
+
+followed by 
+
+```
+# Data at 06:00 AM on 1 December 2022 
+GWS_202212010000054.nc
+```
+
+there is a 6 hour interval between the data contained in the two files.
+
+You can visualize this data with the following 
+
+```
+ncview GWS_20221201000005*.nc
+```
+
+The `*` means "any other character here". In this case, the above syntax 
+gets the following files:
+
+```
+GWS_202212010000054.nc
+GWS_202212010000055.nc
+GWS_202212010000056.nc
+GWS_202212010000057.nc
+GWS_202212010000058.nc
+GWS_202212010000059.nc
+```
+
+Try visualizing the `GWS` corresponding to the number `6` followed by any 
+other character. Hint: the syntax is very similar to what is already shown
+above!
+
 # Windows Subsystem for Linux (WSL) and Bash 
 
 The WSL (assuming it's installed) can be launched with the penguin icon that is
