@@ -263,6 +263,15 @@ cd PUT_SOME_DIRECTORY_HERE
 If you do not provide any arguments to `cd`, then by default you will change
 to your home directory (i.e., something similar to `/home/ls01`).
 
+You can also change to the previous directory by providing `..` as an argument
+to `cd` like
+
+```shell
+# if you are in the directory `AA_intern/climate_datasets`
+# this command would change you to the directory `AA_intern`
+cd ..
+```
+
 You can inspect how to use any bash command by typing
 
 ```shell 
