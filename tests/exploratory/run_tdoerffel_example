@@ -1,22 +1,26 @@
 #!/usr/bin/bash
 # @brief Run T. Doeffel visualization script
-# @note TODO: probably should be slurm script... at the momnet ignoring
+#  TODO: probably should be slurm script... at the momnet ignoring
 #             if running in sallooc mode
-set -eux
+set -eu
 
 DEFAULT_DEBUG=""
 DEBUG="${DEBUG:-$DEFAULT_DEBUG}"
 
 data_dir="/work/bm1233/b383183/runs/uaicon-iap/CAIRT/R2B08_free/remapped_latlon"
-output_dir="/work/bm1233/b383137/omnisuite_visualizations/tdoerffel_250km/"
+base_output_dir="/work/bm1233/b383137/omnisuite_visualizations/tdoerffel_250km"
 
-# TODO: start with a single file then see how you could batch process
-# for all files desired
-netcdf_file="uvwtemp_3d_ML_20181215T000000Z_latlon.nc"
+# Splitting computation across two sets to stay within 24 GB interactive
+# memory limit... a single file load requires ~ 2 GB RAM
+netcdf_file_paths_first=""
+for day in $(seq 15 21) 
+do
+    netcdf_file="uvwtemp_3d_ML_201812${day}T000000Z_latlon.nc"
+    netcdf_file_path="${data_dir}/${netcdf_file}"
+    netcdf_file_paths_first="${netcdf_file_paths_first} ${netcdf_file_path}"
+done
 
-netcdf_file_path="${data_dir}/${netcdf_file}"
 zonal_wind="u"
-temporal_resolution_in_hours="1"
 
 debug_args=""
 if [[ "${DEBUG}" == "ON" ]]
@@ -24,14 +28,20 @@ then
     debug_args="-m pdb"
 fi
 
-# TODO: when you scale this up to be over a month, you need to make sure
-# directories are output directories or otherwise not allow any animation
-# due to asking for overwriting animation.gif or palette.png
-# TODO: you might also specify different level ixs here... these files are 
-# 1 - 250 km so ix 249 corresponds to 250 km
-python ${debug_args} examples/plot_timelapsed_icon_multifiles_tdoerffel_250km.py \
-    --save-animation\
-    --netcdf-response-var-file-path "${netcdf_file_path}"\
-    --netcdf-response-var-short-name "${zonal_wind}"\
-    -W 7680 -H 4320\
-    "${output_dir}"
+set -x
+for level_ix in 100 150 200
+do
+    output_dir="${base_output_dir}/height_${level_ix}km"
+    if [[ ! -d "${output_dir}" ]]
+    then
+        mkdir "${output_dir}"
+    fi
+
+    python ${debug_args} examples/plot_timelapsed_icon_multifiles_tdoerffel_250km.py \
+        --save-animation\
+        --netcdf-response-var-file-path ${netcdf_file_paths_first}\
+        --netcdf-response-var-short-name "${zonal_wind}"\
+        --level-ix ${level_ix} \
+        -W 7680 -H 4320\
+        "${output_dir}"
+done 
