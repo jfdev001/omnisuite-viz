@@ -260,9 +260,7 @@ def cli():
 
     config_group.add_argument(
         "--show-timestamp",
-        help=(
-            "Flag to show each frame with a timestamp from the data"
-            " (default: False)"),
+        help="Flag to show each frame with a timestamp from the data",
         action=BooleanOptionalAction,
         default=False, )
 
@@ -293,7 +291,7 @@ def cli():
 
     config_group.add_argument(
         "--show-colorbar",
-        help="Flag to show colorbar for the data (default: False)",
+        help="Flag to show colorbar for the data.",
         action=BooleanOptionalAction,
         default=False,)
 
@@ -323,12 +321,14 @@ def cli():
         " data used for the c(olor)lim(it)."
         " Relying on quantiles initially is a solid default setting"
         " then you can provide specific `vmin` and `vmax` later while"
-        " setting `--no-use-quantile-for-clim`. (default: True)",
+        " setting `--no-use-quantile-for-clim`.",
         action=BooleanOptionalAction,
         default=True,)
 
     args = parser.parse_args()
 
+    # TODO: you should be able to show a timestamp when a given file
+    # has multiple time steps... this prevents you from doing that...
     if (args.show_timestamp
             and args.time_delta_in_hours_between_consecutive_files is None):
         raise ValueError
@@ -358,7 +358,8 @@ class ICONMultifileDataReader(AbstractReader):
             show_timestamp: bool = False,
             time_delta_in_hours_between_consecutive_files: int = 6,
             level_ix: int = 0,
-            level_name: str = "lev"):
+            # TODO: should be made arg...
+            level_name: str = "height"):
 
         # TODO: keep public for now
         self.netcdf_response_var_file_path = netcdf_response_var_file_path
@@ -409,7 +410,6 @@ class ICONMultifileDataReader(AbstractReader):
 
         self.response: xarr.DataArray = (
             self.mfdataset[self.netcdf_response_var_short_name])
-        print(self.response)
 
         self.latitude: ndarray = (
             self.mfdataset
@@ -435,6 +435,19 @@ class ICONMultifileDataReader(AbstractReader):
             time = self.mfdataset["time"].compute().values
             n_frames = self.response.shape[0]
             t_start = time[0]
+
+            # try casting float to dtime
+            if isinstance(t_start, float):
+                t_start = str(t_start)
+                t_start_integer_part_fractional_part = t_start.split(".")
+                n_parts_of_float = 2
+                assert len(
+                    t_start_integer_part_fractional_part) == n_parts_of_float
+                t_start_integer_part = t_start_integer_part_fractional_part[0]
+                len_yyyy_mm_dd = 8
+                assert len(t_start_integer_part) == len_yyyy_mm_dd
+                t_start = np.datetime64(t_start_integer_part)
+
             delta = np.timedelta64(
                 self.time_delta_in_hours_between_consecutive_files, "h")
             self.frame_to_new_timestamp = self._generate_np_datetimes(
