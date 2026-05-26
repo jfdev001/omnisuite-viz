@@ -1,7 +1,15 @@
 #!/usr/bin/bash
 # @brief Run T. Doeffel visualization script
-#  TODO: probably should be slurm script... at the momnet ignoring
-#             if running in sallooc mode
+# 
+# @description Generates images suitable for use in Omnisuite for the
+#              dates 2018-12-15 to 2018-12-21 where data is hourly
+#              and variable of interest is zonal winds (u). Height levels
+#              sampled are at 100 km, 150 km, and 200 km. Data are from R2B8
+#              extended model top ICON simulation and were remapped to latlon.
+#
+# @note This script was executed in an interactive Slurm environment with 24 GB
+#       RAM. It is not advised to run the script outside of a Slurm environment
+#       since data processing will require at least 10 GB RAM.
 set -eu
 
 DEFAULT_DEBUG=""
@@ -35,6 +43,9 @@ do
     if [[ ! -d "${output_dir}" ]]
     then
         mkdir "${output_dir}"
+    else
+        echo "[INFO]: Skipping plotting for ${level_ix}"
+        continue
     fi
 
     python ${debug_args} examples/plot_timelapsed_icon_multifiles_tdoerffel_250km.py \
