@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+# @brief Run T. Doeffel visualization script
+# @note TODO: probably should be slurm script... at the momnet ignoring
+#             if running in sallooc mode

@@ -196,13 +196,14 @@ def cli():
         type=str,
         default=default_netcdf_response_var_short_name)
 
+    default_concat_dim = None
     read_group.add_argument(
-        "--concat-dim", type=str, default=None,
+        "--concat-dim", type=str, default=default_concat_dim,
         help="name of axis to manually concatenate on for xarray."
         " (e.g., 'time' would mean that for poorly labeled NetCDF"
         " files for which the time coordinate does not correspond"
         " to the actual output interval, the concatenation over the"
-        " time axis will still occur correctly)")
+        f" time axis will still occur correctly). (default: {default_concat_dim})")
 
     default_level_ix = 72  # based on conversation with P. Ghosh
     read_group.add_argument(
@@ -233,20 +234,20 @@ def cli():
     config_group.add_argument(
         "-W", "--plot_width_in_pixels",
         type=int,
-        help=f" (default: {default_plot_width_in_pixels})",
+        help=f" For production, you should prefer 8k res, i.e., 7680 (default: {default_plot_width_in_pixels})",
         default=default_plot_width_in_pixels)
 
     default_plot_height_in_pixels = 1024
     config_group.add_argument(
         "-H", "--plot_height_in_pixels",
         type=int,
-        help=f" (default: {default_plot_height_in_pixels})",
+        help=f" For production, you should prefer 8k res, i.e., 4320 (default: {default_plot_height_in_pixels})",
         default=default_plot_height_in_pixels)
 
     default_alpha = 0.3
     config_group.add_argument(
         "--alpha",
-        help=f"transparency. (default: {default_alpha})",
+        help=f"transparency (0 is completely transparent, 1 is completely opaque, prefer opaque in production) (default: {default_alpha})",
         type=float,
         default=default_alpha)
 
@@ -265,13 +266,14 @@ def cli():
         action=BooleanOptionalAction,
         default=False, )
 
+    default_time_delta = None
     config_group.add_argument(
         "--time-delta-in-hours-between-consecutive-files",
         type=int,
         help="difference in hours between outputs in consecutive files."
         " E.g., 6 implies 6 hour difference between consecutive files"
-        " (default: None).",
-        default=None)
+        f" (default: {default_time_delta}).",
+        default=default_time_delta)
 
     default_timestamp_x_pos = 0.942
     config_group.add_argument(
