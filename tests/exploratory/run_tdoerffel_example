@@ -1,0 +1,58 @@
+#!/usr/bin/bash
+# @brief Run T. Doeffel visualization script
+# 
+# @description Generates images suitable for use in Omnisuite for the
+#              dates 2018-12-15 to 2018-12-21 where data is hourly
+#              and variable of interest is zonal winds (u). Height levels
+#              sampled are at 100 km, 150 km, and 200 km. Data are from R2B8
+#              extended model top ICON simulation and were remapped to latlon.
+#
+# @note This script was executed in an interactive Slurm environment with 24 GB
+#       RAM. It is not advised to run the script outside of a Slurm environment
+#       since data processing will require at least 10 GB RAM.
+set -eu
+
+DEFAULT_DEBUG=""
+DEBUG="${DEBUG:-$DEFAULT_DEBUG}"
+
+data_dir="/work/bm1233/b383183/runs/uaicon-iap/CAIRT/R2B08_free/remapped_latlon"
+base_output_dir="/work/bm1233/b383137/omnisuite_visualizations/tdoerffel_250km"
+
+# Splitting computation across two sets to stay within 24 GB interactive
+# memory limit... a single file load requires ~ 2 GB RAM
+netcdf_file_paths_first=""
+for day in $(seq 15 21) 
+do
+    netcdf_file="uvwtemp_3d_ML_201812${day}T000000Z_latlon.nc"
+    netcdf_file_path="${data_dir}/${netcdf_file}"
+    netcdf_file_paths_first="${netcdf_file_paths_first} ${netcdf_file_path}"
+done
+
+zonal_wind="u"
+
+debug_args=""
+if [[ "${DEBUG}" == "ON" ]]
+then
+    debug_args="-m pdb"
+fi
+
+set -x
+for level_ix in 100 150 200
+do
+    output_dir="${base_output_dir}/height_${level_ix}km"
+    if [[ ! -d "${output_dir}" ]]
+    then
+        mkdir "${output_dir}"
+    else
+        echo "[INFO]: Skipping plotting for ${level_ix}"
+        continue
+    fi
+
+    python ${debug_args} examples/plot_timelapsed_icon_multifiles_tdoerffel_250km.py \
+        --save-animation\
+        --netcdf-response-var-file-path ${netcdf_file_paths_first}\
+        --netcdf-response-var-short-name "${zonal_wind}"\
+        --level-ix ${level_ix} \
+        -W 7680 -H 4320\
+        "${output_dir}"
+done 
