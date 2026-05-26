@@ -436,7 +436,7 @@ class ICONMultifileDataReader(AbstractReader):
             n_frames = self.response.shape[0]
             t_start = time[0]
 
-            # try casting float to dtime
+            # NOTE: try casting float to dtime...
             if isinstance(t_start, float):
                 t_start = str(t_start)
                 t_start_integer_part_fractional_part = t_start.split(".")

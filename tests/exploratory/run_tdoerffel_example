@@ -24,10 +24,14 @@ then
     debug_args="-m pdb"
 fi
 
+# TODO: when you scale this up to be over a month, you need to make sure
+# directories are output directories or otherwise not allow any animation
+# due to asking for overwriting animation.gif or palette.png
+# TODO: you might also specify different level ixs here... these files are 
+# 1 - 250 km so ix 249 corresponds to 250 km
 python ${debug_args} examples/plot_timelapsed_icon_multifiles_tdoerffel_250km.py \
     --save-animation\
     --netcdf-response-var-file-path "${netcdf_file_path}"\
     --netcdf-response-var-short-name "${zonal_wind}"\
-    --time-delta-in-hours-between-consecutive-files "${temporal_resolution_in_hours}"\
-    --show-timestamp\
+    -W 7680 -H 4320\
     "${output_dir}"
