@@ -234,14 +234,14 @@ def cli():
     config_group.add_argument(
         "-W", "--plot_width_in_pixels",
         type=int,
-        help=f" For production, you should prefer 8k res, i.e., 7680 (default: {default_plot_width_in_pixels})",
+        help=f" For production, you should prefer 8k res, i.e., 8192 (default: {default_plot_width_in_pixels})",
         default=default_plot_width_in_pixels)
 
     default_plot_height_in_pixels = 1024
     config_group.add_argument(
         "-H", "--plot_height_in_pixels",
         type=int,
-        help=f" For production, you should prefer 8k res, i.e., 4320 (default: {default_plot_height_in_pixels})",
+        help=f" For production, you should prefer 8k res, i.e., 4096 (default: {default_plot_height_in_pixels})",
         default=default_plot_height_in_pixels)
 
     default_alpha = 0.3
