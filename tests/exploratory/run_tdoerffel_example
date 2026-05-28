@@ -39,7 +39,9 @@ fi
 set -x
 for level_ix in 100 150 200
 do
-    output_dir="${base_output_dir}/height_${level_ix}km"
+    height=4096
+    width=8192
+    output_dir="${base_output_dir}/height_${level_ix}km_${width}x${height}"
     if [[ ! -d "${output_dir}" ]]
     then
         mkdir "${output_dir}"
@@ -49,10 +51,10 @@ do
     fi
 
     python ${debug_args} examples/plot_timelapsed_icon_multifiles_tdoerffel_250km.py \
-        --save-animation\
+        --no-save-animation\
         --netcdf-response-var-file-path ${netcdf_file_paths_first}\
         --netcdf-response-var-short-name "${zonal_wind}"\
         --level-ix ${level_ix} \
-        -W 7680 -H 4320\
+        -W ${width} -H ${height}\
         "${output_dir}"
 done 
